@@ -1,0 +1,267 @@
+{
+  "Uuid": "d9c8a853-e4d0-4cd4-8fb8-7dacb66c5416",
+  "IsCustomNode": false,
+  "Description": null,
+  "Name": "Reset_Highlight_script",
+  "ElementResolver": {
+    "ResolutionMap": {
+      "Elements.Element": {
+        "Key": "Revit.Elements.Element",
+        "Value": "RevitNodes.dll"
+      },
+      "Revit.Elements.Element": {
+        "Key": "Revit.Elements.Element",
+        "Value": "RevitNodes.dll"
+      },
+      "Elements.View3D": {
+        "Key": "Revit.Elements.Views.View3D",
+        "Value": "RevitNodes.dll"
+      },
+      "Revit.Elements.Views.View3D": {
+        "Key": "Revit.Elements.Views.View3D",
+        "Value": "RevitNodes.dll"
+      },
+      "Autodesk.DesignScript.Geometry.Curve": {
+        "Key": "Autodesk.DesignScript.Geometry.Curve",
+        "Value": "ProtoGeometry.dll"
+      },
+      "Autodesk.DesignScript.Geometry.Curve.Vector": {
+        "Key": "Autodesk.DesignScript.Geometry.Curve",
+        "Value": "ProtoGeometry.dll"
+      },
+      "Autodesk.DesignScript.Geometry": {
+        "Key": "Autodesk.DesignScript.Geometry.Curve",
+        "Value": "ProtoGeometry.dll"
+      },
+      "Math.Vector": {
+        "Key": "DSCore.Math",
+        "Value": "DSCoreNodes.dll"
+      },
+      "DSCore.Math.Vector": {
+        "Key": "DSCore.Math",
+        "Value": "DSCoreNodes.dll"
+      },
+      "DSCore.Math": {
+        "Key": "DSCore.Math",
+        "Value": "DSCoreNodes.dll"
+      },
+      "Vector": {
+        "Key": "Autodesk.DesignScript.Geometry.Vector",
+        "Value": "ProtoGeometry.dll"
+      },
+      "Line.Geometry": {
+        "Key": "Autodesk.DesignScript.Geometry.Line",
+        "Value": "ProtoGeometry.dll"
+      },
+      "Elements.Element.Vector": {
+        "Key": "Revit.Elements.Element",
+        "Value": "RevitNodes.dll"
+      },
+      "Revit.Elements.Element.Vector": {
+        "Key": "Revit.Elements.Element",
+        "Value": "RevitNodes.dll"
+      }
+    }
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Application.Document.Current",
+      "Id": "dddb130de4f14f58aed97341b0f54854",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a0cd1aaf0c1d4855810c79cfc37633f0",
+          "Name": "Document",
+          "Description": "Document",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the current document\n\nDocument.Current: Document"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Application.Document.ActiveView",
+      "Id": "6e3ff29392094a0694a704630131c52a",
+      "Inputs": [
+        {
+          "Id": "2e47343228b544168e2fd882145d99e2",
+          "Name": "document",
+          "Description": "Revit.Application.Document",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "dab93e6359d74d7f8d1c45ed72fee443",
+          "Name": "View",
+          "Description": "View",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the active view for the document\n\nDocument.ActiveView: View"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nitems = UnwrapElement(IN[0])\r\nview = UnwrapElement(IN[1])\r\nbooleans = []\r\n\r\noverride = OverrideGraphicSettings()\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nfor item in items:\r\n\ttry:\r\n\t\tview.SetElementOverrides(item.Id, override)\r\n\t\tbooleans.append(True)\r\n\texcept: booleans.append(False)\r\nTransactionManager.Instance.TransactionTaskDone()\r\nOUT = (items,view,booleans)\r\n",
+      "VariableInputPorts": true,
+      "Id": "55e42e1ec8494e678b265e36a1fea3ef",
+      "Inputs": [
+        {
+          "Id": "4cee83c7251340d5882fad3044f91540",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4afdf72de2cd40f0acfe3ee11e6e05ab",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8acbf873c25541c69aaa25d52daee522",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded IronPython script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsInView, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "dedb99d94ca04d429c3d266d3f58e7c8",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a1e81238c7ba410bb026abb32904161c",
+          "Name": "elements",
+          "Description": "All visible elements in the active view.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all the elements which are visible in the active view."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "a0cd1aaf0c1d4855810c79cfc37633f0",
+      "End": "2e47343228b544168e2fd882145d99e2",
+      "Id": "0c1f6fdb34de4b9d918a9cc19c8b6071"
+    },
+    {
+      "Start": "dab93e6359d74d7f8d1c45ed72fee443",
+      "End": "4afdf72de2cd40f0acfe3ee11e6e05ab",
+      "Id": "c550545d208444198b2c838a0798bd8c"
+    },
+    {
+      "Start": "a1e81238c7ba410bb026abb32904161c",
+      "End": "4cee83c7251340d5882fad3044f91540",
+      "Id": "f92384429c584f769c12e4b6df804aad"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.6.1.8786",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -152.45059721157881,
+      "EyeY": 100.71910424097958,
+      "EyeZ": 74.7993674869406,
+      "LookX": 48.835362406140291,
+      "LookY": -99.247846281679884,
+      "LookZ": -101.52058825436285,
+      "UpX": 0.21016103793495697,
+      "UpY": 0.87461970713939874,
+      "UpZ": -0.43688980992637361
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Document.Current",
+        "Id": "dddb130de4f14f58aed97341b0f54854",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1060.2047697528947,
+        "Y": 733.760658290482
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Document.ActiveView",
+        "Id": "6e3ff29392094a0694a704630131c52a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -895.66869040164329,
+        "Y": 733.76065829048207
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Reset Overrides",
+        "Id": "55e42e1ec8494e678b265e36a1fea3ef",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -589.02839945475762,
+        "Y": 668.53539250027086
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "All Elements In Active View",
+        "Id": "dedb99d94ca04d429c3d266d3f58e7c8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -870.66869040164329,
+        "Y": 635.4442025974048
+      }
+    ],
+    "Annotations": [],
+    "X": 1522.5720886251906,
+    "Y": -35.416656145542163,
+    "Zoom": 0.97949852024991024
+  }
+}

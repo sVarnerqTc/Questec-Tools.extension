@@ -1,0 +1,12 @@
+tooltip:
+  en_us: For pipes and hangers visible in the active view. Run to apply BOP, BOI, System Abbreviation, and Support Discipline. Hangers that intersect multiple pipes or no pipes will be highlighted
+
+title:
+  en_us: >-
+    Apply
+  
+    Hanger Properties
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

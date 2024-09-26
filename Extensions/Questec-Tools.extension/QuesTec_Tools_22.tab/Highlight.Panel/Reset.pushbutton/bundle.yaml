@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Resets any highlights applied from other commands in the active view
+
+title:
+  en_us: >-
+    Reset
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
