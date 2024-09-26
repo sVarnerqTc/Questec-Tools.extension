@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Creates and applies view filters with colors for each package name in the active view
+
+title:
+  en_us: >-
+    By Package with Colors
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

@@ -1,0 +1,12 @@
+tooltip:
+  en_us: Run to place points over visible fittings in the active view
+
+title:
+  en_us: >-
+    Points
+  
+    Over Fittings
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

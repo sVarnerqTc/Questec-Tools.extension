@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Creates and applies view filters for each Specification Name in the active view. This applies to Sysque ductwork
+
+title:
+  en_us: >-
+    By Spec Name
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2022

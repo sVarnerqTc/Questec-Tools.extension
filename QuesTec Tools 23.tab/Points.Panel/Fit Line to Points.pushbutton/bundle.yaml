@@ -1,0 +1,12 @@
+tooltip:
+  en_us: Place points on column faces, wall, etc of a point cloud. Select the points and run this command to place a best fit line which can be used to correct the point cloud rotation.
+
+title:
+  en_us: >-
+    Fit Line
+  
+    to Points
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

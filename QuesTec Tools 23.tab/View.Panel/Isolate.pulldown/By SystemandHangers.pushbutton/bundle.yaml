@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Pre-Select Elements and run to isolate elements with the same 'System Type' and hangers with the matching System abbreviation in Comments 
+
+title:
+  en_us: >-
+    By System and Hangers
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

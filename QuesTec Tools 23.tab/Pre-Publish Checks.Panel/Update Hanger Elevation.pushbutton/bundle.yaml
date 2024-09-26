@@ -1,0 +1,11 @@
+tooltip:
+  en_us: In a 3D view, run to adjust hangers to the correct height on a sloped pipe.
+title:
+  en_us: >-
+    Update Hanger
+  
+    Elevation
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2023

@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Pre-Select Elements and run to isolate elements with the same 'Specification Name' in the active view. This is for Sysque Ductwork
+
+title:
+  en_us: >-
+    By Spec Name
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

@@ -1,0 +1,12 @@
+tooltip:
+  en_us: In a 3D view, isolates elements with no 'QTC BOM Description' or 'Alternate Description II'
+
+title:
+  en_us: >-
+    Check
+  
+    BOM Descriptions
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

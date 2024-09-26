@@ -1,0 +1,12 @@
+tooltip:
+  en_us:Run Dynamo Run this command to insulate pipes in the active view. "Insulation Schedule.csv" must be saved in the subfolder "04. Submittals, etc."
+
+title:
+  en_us: >-
+    Insulate
+  
+    From Schedule
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

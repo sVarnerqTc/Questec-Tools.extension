@@ -1,0 +1,149 @@
+{
+  "Uuid": "08b94775-f0c7-40c9-bdda-f3643c0fe8b4",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "Create Standard Worksets_script",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\"Links - Point Cloud\",\n\"Links - Revit\",\n\"Links - DWG, DXF\",\n\"Links - Coordination Model\",\n\"Pipe - Mechanical\",\n\"Pipe - Plumbing\",\n\"Pipe - Underground\",\n\"Sheet Metal\"];",
+      "Id": "16379eb1943e4385b9057c8ad53ba1ae",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d14a0bd11b3f4103be5571763eb54653",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Copyright(c) 2015, Konrad K Sobon\r\n# @arch_laboratory, http://archi-lab.net\r\n\r\nimport clr\r\n\r\n# Import Element wrapper extension methods\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\n# Import DocumentManager and TransactionManager\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Import RevitAPI\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\nimport sys\r\npyt_path = r'C:\\Program Files (x86)\\IronPython 2.7\\Lib'\r\nsys.path.append(pyt_path)\r\n\r\n#The inputs to this node will be stored as a list in the IN variable.\r\ndataEnteringNode = IN\r\n\r\ndef ProcessList(_func, _list):\r\n    return map( lambda x: ProcessList(_func, x) if type(x)==list else _func(x), _list )\r\n\r\nnames = IN[0]\r\n\r\nif not isinstance(names, list):\r\n\tnames = [IN[0]]\r\n\r\ndef CreateWorkset(name):\r\n\tdoc = DocumentManager.Instance.CurrentDBDocument\r\n\ttry:\r\n\t\tw = Workset.Create(doc, name)\r\n\texcept:\r\n\t\t# if error accurs anywhere in the process catch it\r\n\t\timport traceback\r\n\t\tw = traceback.format_exc()\r\n\treturn w\r\n\t\r\ntry:\r\n\terrorReport = None\r\n\tif not doc.IsWorkshared:\r\n\t\terrorReport = \"Worksharing is disabled. How did \\nyou expect to make new worksets?\"\r\n\telse:\r\n\t\tTransactionManager.Instance.EnsureInTransaction(doc)\r\n\t\tnewWorksets = ProcessList(CreateWorkset, names)\r\n\t\tTransactionManager.Instance.TransactionTaskDone()\r\n\r\nexcept:\r\n\t# if error accurs anywhere in the process catch it\r\n\timport traceback\r\n\terrorReport = traceback.format_exc()\r\n\r\n#Assign your output to the OUT variable\r\nif errorReport == None:\r\n\tOUT = newWorksets\r\nelse:\r\n\tOUT = '\\n'.join('{:^35}'.format(s) for s in errorReport.split('\\n'))",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "935c5040912f4986823fc71cc7c2758a",
+      "Inputs": [
+        {
+          "Id": "5d95a0a824084ec480ebe0297365985f",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6ab47cc1fa61434292b1e67b23b5bc7c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "d14a0bd11b3f4103be5571763eb54653",
+      "End": "5d95a0a824084ec480ebe0297365985f",
+      "Id": "f3e495d02e5a4d0eb2ed3d713916d49b",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.16",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "3.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.16.2.5624",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "16379eb1943e4385b9057c8ad53ba1ae",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 259.72067431502876,
+        "Y": 338.928588987378
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "935c5040912f4986823fc71cc7c2758a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 702.42759938589393,
+        "Y": 337.58136734573657
+      }
+    ],
+    "Annotations": [],
+    "X": 176.33121845131132,
+    "Y": -83.247585492582829,
+    "Zoom": 1.0669527078898011
+  }
+}
