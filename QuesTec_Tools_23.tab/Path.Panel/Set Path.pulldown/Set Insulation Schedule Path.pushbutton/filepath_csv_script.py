@@ -48,7 +48,7 @@ def main():
 
     if file_path:
         # Set the file path in a global parameter
-        parameter_name = "InsulationSchedulePath"
+        parameter_name = "Insulation Schedule Path"
         set_global_parameter(doc, parameter_name, file_path)
 
 main()
