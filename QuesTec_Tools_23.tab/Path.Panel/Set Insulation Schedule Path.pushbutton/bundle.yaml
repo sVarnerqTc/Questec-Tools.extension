@@ -3,7 +3,9 @@ tooltip:
 
 title:
   en_us: >-
-    Set Insulation Schedule Path
+    Set Insulation
+    
+    Schedule Path
 authors:
   - 'SVarner'
 help_url:
