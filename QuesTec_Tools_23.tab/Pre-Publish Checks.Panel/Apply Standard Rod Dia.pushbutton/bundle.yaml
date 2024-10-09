@@ -1,0 +1,11 @@
+tooltip:
+  en_us: In a 3D view, run to set rod diameter of visible hangers. Up to 4" gets 3/8"rod, 5"-8" gets 1/2" rod, 10" and up gets 5/8" rod
+title:
+  en_us: >-
+    Apply Standard
+  
+    Rod Dia
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2023
