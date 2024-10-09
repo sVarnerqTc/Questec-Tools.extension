@@ -1,0 +1,13 @@
+tooltip:
+  en_us: Import a CSV in the format Point#,X,Y,Z,Comments with a header row (The first row will be omitted) SHIFT-click to set the path of the csv
+
+title:
+  en_us: >-
+    Points From CSV
+  
+    Shared Coords
+    
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
