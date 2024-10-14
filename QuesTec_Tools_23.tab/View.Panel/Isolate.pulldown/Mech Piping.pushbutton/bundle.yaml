@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Run to isolate hydroning piping systems. Looks for 'MP-'
+
+title:
+  en_us: >-
+    Mech Piping
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

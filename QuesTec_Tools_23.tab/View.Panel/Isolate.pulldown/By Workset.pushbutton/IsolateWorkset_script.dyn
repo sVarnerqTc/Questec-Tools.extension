@@ -34,8 +34,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "#Copyright(c) 2016, Dimitar Venkov\r\n# @5devene, dimitar.ven@gmail.com\r\n\r\nimport clr\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuidoc = DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\ndef output1(l1):\r\n\tif len(l1) == 1: return l1[0]\r\n\telse: return l1\r\n\r\nselid = uidoc.Selection.GetElementIds()\r\nOUT = output1([doc.GetElement(id).ToDSType(True) for id in selid])",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "d80f5ff705904021bf179084afa19b07",
       "Inputs": [
@@ -67,8 +66,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nfrom System.Collections.Generic import *\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndef TempIsolateElements(view, items):\r\n\tif not items: return False\r\n\telif not isinstance(items, list): items = [items]\r\n\tielements = List[ElementId]([x.Id for x in UnwrapElement(items)])\r\n\ttry:\r\n\t\tUnwrapElement(view).IsolateElementsTemporary(ielements)\r\n\t\treturn True\r\n\texcept: return False\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nif isinstance(IN[1], list):\r\n\tif isinstance(IN[0], list): OUT = [TempIsolateElements(x, y) for x, y in zip(IN[1], IN[0])]\r\n\telse: OUT = [TempIsolateElements(x, IN[0]) for x in IN[1]]\r\nelse: OUT = TempIsolateElements(IN[1], IN[0])\r\nTransactionManager.Instance.TransactionTaskDone()",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "6528ab7833424f10b6c6f19741351054",
       "Inputs": [
@@ -305,8 +303,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\nlist = IN[0]\r\nout = []\r\nfor sublist in list:\r\n\tif True in sublist:\r\n\t\tout.append(True)\r\n\telse:\r\n\t\tout.append(False)\r\nOUT = out\r\n",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "ea5f0408b7cd43629a5a8e6aab875542",
       "Inputs": [
@@ -1364,7 +1361,7 @@
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
-  "Thumbnail": null,
+  "Thumbnail": "",
   "GraphDocumentationURL": null,
   "ExtensionWorkspaceData": [
     {
@@ -1393,7 +1390,7 @@
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.16.2.5624",
+      "Version": "2.13.1.3887",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -1695,13 +1692,13 @@
         ],
         "HasNestedGroups": false,
         "Left": -5678.3694942879765,
-        "Top": 668.20360140795265,
-        "Width": 194.0,
-        "Height": 292.0,
+        "Top": 668.87026807461928,
+        "Width": 194.66666666666697,
+        "Height": 303.66666666666674,
         "FontSize": 36.0,
         "InitialTop": 828.20360140795265,
         "InitialHeight": 145.0,
-        "TextblockHeight": 150.0,
+        "TextblockHeight": 149.33333333333334,
         "Background": "#FFC1D676"
       },
       {
@@ -1718,13 +1715,13 @@
         ],
         "HasNestedGroups": false,
         "Left": -2378.7828984711846,
-        "Top": 320.73646627755443,
+        "Top": 320.40313294422111,
         "Width": 716.04768747147114,
-        "Height": 271.43409841581706,
+        "Height": 271.434098415817,
         "FontSize": 36.0,
         "InitialTop": 393.73646627755443,
         "InitialHeight": 211.43409841581706,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1742,18 +1739,18 @@
         ],
         "HasNestedGroups": false,
         "Left": -3372.9960604237694,
-        "Top": 319.12469176797589,
-        "Width": 985.280244196169,
-        "Height": 665.74875892191244,
+        "Top": 318.79135843464258,
+        "Width": 984.94691086283547,
+        "Height": 677.41542558857918,
         "FontSize": 36.0,
         "InitialTop": 392.12469176797589,
         "InitialHeight": 570.74875892191244,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       }
     ],
-    "X": 4435.8799938611392,
-    "Y": -36.054227934354,
-    "Zoom": 0.89134917339558739
+    "X": 2388.4190004871425,
+    "Y": -10.003109922829367,
+    "Zoom": 0.75909651373112386
   }
 }

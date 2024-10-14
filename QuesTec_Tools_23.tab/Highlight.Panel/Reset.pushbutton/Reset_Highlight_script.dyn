@@ -120,6 +120,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nitems = UnwrapElement(IN[0])\r\nview = UnwrapElement(IN[1])\r\nbooleans = []\r\n\r\noverride = OverrideGraphicSettings()\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nfor item in items:\r\n\ttry:\r\n\t\tview.SetElementOverrides(item.Id, override)\r\n\t\tbooleans.append(True)\r\n\texcept: booleans.append(False)\r\nTransactionManager.Instance.TransactionTaskDone()\r\nOUT = (items,view,booleans)\r\n",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "55e42e1ec8494e678b265e36a1fea3ef",
       "Inputs": [
@@ -154,7 +155,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Runs an embedded IronPython script."
+      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "DSRevitNodesUI.ElementsInView, DSRevitNodesUI",
@@ -180,28 +181,54 @@
     {
       "Start": "a0cd1aaf0c1d4855810c79cfc37633f0",
       "End": "2e47343228b544168e2fd882145d99e2",
-      "Id": "0c1f6fdb34de4b9d918a9cc19c8b6071"
+      "Id": "0c1f6fdb34de4b9d918a9cc19c8b6071",
+      "IsHidden": "False"
     },
     {
       "Start": "dab93e6359d74d7f8d1c45ed72fee443",
       "End": "4afdf72de2cd40f0acfe3ee11e6e05ab",
-      "Id": "c550545d208444198b2c838a0798bd8c"
+      "Id": "c550545d208444198b2c838a0798bd8c",
+      "IsHidden": "False"
     },
     {
       "Start": "a1e81238c7ba410bb026abb32904161c",
       "End": "4cee83c7251340d5882fad3044f91540",
-      "Id": "f92384429c584f769c12e4b6df804aad"
+      "Id": "f92384429c584f769c12e4b6df804aad",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
+  "Thumbnail": null,
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.13",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "2.0",
+      "Data": {}
+    }
+  ],
+  "Author": "None provided",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
   "Bindings": [],
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.6.1.8786",
+      "Version": "2.13.1.3887",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -217,10 +244,11 @@
       "UpY": 0.87461970713939874,
       "UpZ": -0.43688980992637361
     },
+    "ConnectorPins": [],
     "NodeViews": [
       {
-        "ShowGeometry": true,
         "Name": "Document.Current",
+        "ShowGeometry": true,
         "Id": "dddb130de4f14f58aed97341b0f54854",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -229,8 +257,8 @@
         "Y": 733.760658290482
       },
       {
-        "ShowGeometry": true,
         "Name": "Document.ActiveView",
+        "ShowGeometry": true,
         "Id": "6e3ff29392094a0694a704630131c52a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -239,8 +267,8 @@
         "Y": 733.76065829048207
       },
       {
-        "ShowGeometry": true,
         "Name": "Reset Overrides",
+        "ShowGeometry": true,
         "Id": "55e42e1ec8494e678b265e36a1fea3ef",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -249,8 +277,8 @@
         "Y": 668.53539250027086
       },
       {
-        "ShowGeometry": true,
         "Name": "All Elements In Active View",
+        "ShowGeometry": true,
         "Id": "dedb99d94ca04d429c3d266d3f58e7c8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,

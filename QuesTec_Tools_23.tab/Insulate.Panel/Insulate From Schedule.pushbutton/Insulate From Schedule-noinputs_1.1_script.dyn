@@ -2,7 +2,7 @@
   "Uuid": "424158fc-7f1a-441b-8b92-f2b29bec6f55",
   "IsCustomNode": false,
   "Description": "",
-  "Name": "Insulate From Schedule-noinputs_script_1.1",
+  "Name": "Insulate From Schedule-noinputs_1.1_script",
   "ElementResolver": {
     "ResolutionMap": {
       "Category": {
@@ -173,8 +173,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n#The inputs to this node will be stored as a list in the IN variables.\r\nfittings = UnwrapElement(IN[0])\r\nlistout = []\r\n\r\nfor x in fittings:\r\n\tlistout.append(x.MEPModel.PartType)\r\n\r\n#Assign your output to the OUT variable.\r\nOUT = listout",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "e717a421199b45cca58c3cfb33af1be8",
       "Inputs": [
@@ -1594,8 +1593,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nif isinstance(IN[0], list):\r\n\tpipes = UnwrapElement(IN[0])\r\nelse:\r\n\tpipes = [UnwrapElement(IN[0])]\r\n\r\nlistout = []\r\n\r\nfor pipe in pipes:\r\n\ttry:\r\n\t\tinsulation = InsulationLiningBase.GetInsulationIds(doc,pipe.Id)\r\n\t\tlistout.append(doc.GetElement(insulation[0]))\r\n\texcept:\r\n\t\tlistout.append(None)\r\n\r\n\r\nOUT = listout",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "e602387d5a2e41d3bc0358aea08ad219",
       "Inputs": [
@@ -1971,8 +1969,7 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\n\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nif isinstance(IN[0], list):\r\n\tpipes = UnwrapElement(IN[0])\r\nelse:\r\n\tpipes = [UnwrapElement(IN[0])]\r\nif isinstance(IN[1], list):\r\n\tinsultype = UnwrapElement(IN[1])\r\nelse:\r\n\tinsultype = [UnwrapElement(IN[1])]\r\nli = len(insultype)\r\nif isinstance(IN[2], list):\r\n\tsize = IN[2]\r\nelse:\r\n\tsize = [IN[2]]\r\nls = len(size)\r\n\r\n\r\nif int(app.VersionNumber) < 2021:\r\n\tdut = doc.GetUnits().GetFormatOptions(UnitType.UT_Length).DisplayUnits\r\n\tbool = dut == DisplayUnitType.DUT_MILLIMETERS\r\n\tsize = map(lambda x:UnitUtils.Convert(x,DisplayUnitType.DUT_MILLIMETERS,DisplayUnitType.DUT_DECIMAL_FEET) if bool else x, size)\r\nelse:\r\n\tunittype = SpecTypeId.Length\r\n\tdut = doc.GetUnits().GetFormatOptions(unittype).GetUnitTypeId()\r\n\tbool = dut == UnitTypeId.Millimeters\r\n\tsize = map(lambda x:UnitUtils.Convert(x,UnitTypeId.Millimeters,UnitTypeId.Feet) if bool else x, size)\r\n\r\n\r\nfailed = []\r\nsucces = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nfor i,pipe in enumerate(pipes):\r\n\ts = i%ls\r\n\tl = i%li\r\n\ttry:\r\n\t\tPlumbing.PipeInsulation.Create(doc,pipe.Id,insultype[l].Id,size[s])\r\n\t\tsucces.append(pipe)\r\n\texcept:\r\n\t\ttry:\r\n\t\t\tMechanical.DuctInsulation.Create(doc,pipe.Id,insultype[l].Id,size[s])\r\n\t\t\tsucces.append(pipe)\r\n\t\texcept:\r\n\t\t\tfailed.append(pipe)\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n\r\nOUT = succes, failed",
-      "Engine": "IronPython2",
-      "EngineName": "IronPython2",
+      "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "39da9a218c144235b2bed286c8ef1f75",
       "Inputs": [
@@ -2442,15 +2439,7 @@
     }
   ],
   "Dependencies": [],
-  "NodeLibraryDependencies": [
-    {
-      "Name": "Insulation Schedule.csv",
-      "ReferenceType": "External",
-      "Nodes": [
-        "6edd5b874f954ab5b31b8901d2b8dd00"
-      ]
-    }
-  ],
+  "NodeLibraryDependencies": [],
   "Thumbnail": "",
   "GraphDocumentationURL": null,
   "ExtensionWorkspaceData": [
@@ -2480,7 +2469,7 @@
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.16.2.5624",
+      "Version": "2.13.1.3887",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -3005,13 +2994,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 2342.3841163762,
-        "Top": 761.69376518275647,
-        "Width": 1123.4969476436331,
-        "Height": 346.0674382287126,
+        "Top": 761.36043184942309,
+        "Width": 1123.1636143102996,
+        "Height": 347.06743822871272,
         "FontSize": 36.0,
         "InitialTop": 834.69376518275647,
-        "InitialHeight": 304.91432082009089,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 227.06743822871272,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3028,13 +3017,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 3561.5203222840778,
-        "Top": 1101.9618417541112,
-        "Width": 443.82188581801938,
+        "Top": 1101.628508420778,
+        "Width": 438.15521915135287,
         "Height": 436.42299803687843,
         "FontSize": 36.0,
         "InitialTop": 1174.9618417541112,
-        "InitialHeight": 336.98267279574975,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 376.42299803687843,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3053,13 +3042,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 1316.2245516760358,
-        "Top": 961.570966466046,
+        "Top": 961.23763313271263,
         "Width": 961.540605194682,
-        "Height": 423.08340356063627,
+        "Height": 422.41673689396964,
         "FontSize": 36.0,
         "InitialTop": 1034.570966466046,
-        "InitialHeight": 526.32377766198056,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 333.08340356063627,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3078,11 +3067,11 @@
         "HasNestedGroups": false,
         "Left": 4523.2439227674822,
         "Top": 1326.2338444888751,
-        "Width": 1405.0428576354379,
-        "Height": 451.72081864990696,
+        "Width": 1404.7095243021049,
+        "Height": 451.3874853165737,
         "FontSize": 30.0,
         "InitialTop": 1392.2338444888751,
-        "InitialHeight": 415.72081864990696,
+        "InitialHeight": 398.72081864990696,
         "TextblockHeight": 56.0,
         "Background": "#FFC1D676"
       },
@@ -3102,13 +3091,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 3150.6271660474049,
-        "Top": 1798.7948910283321,
-        "Width": 1720.0135151503127,
-        "Height": 414.55997183222189,
+        "Top": 1798.4615576949989,
+        "Width": 1713.3468484836458,
+        "Height": 427.22663849888863,
         "FontSize": 36.0,
         "InitialTop": 1871.7948910283321,
-        "InitialHeight": 371.55997183222189,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 149.5,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3125,13 +3114,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 5867.8628042543723,
-        "Top": 1829.0888453836212,
-        "Width": 482.12553909575036,
-        "Height": 350.619636634118,
+        "Top": 1828.755512050288,
+        "Width": 481.79220576241732,
+        "Height": 350.6196366341178,
         "FontSize": 36.0,
         "InitialTop": 1902.0888453836212,
-        "InitialHeight": 307.619636634118,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 290.619636634118,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3148,11 +3137,11 @@
         "HasNestedGroups": false,
         "Left": 5994.76783376516,
         "Top": 1571.0051259488591,
-        "Width": 585.71114511057021,
-        "Height": 245.26233917221202,
+        "Width": 586.04447844390324,
+        "Height": 257.92900583887877,
         "FontSize": 14.0,
         "InitialTop": 1621.0051259488591,
-        "InitialHeight": 225.26233917221202,
+        "InitialHeight": 149.26233917221202,
         "TextblockHeight": 40.0,
         "Background": "#FFC1D676"
       },
@@ -3170,13 +3159,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7403.8638423029861,
-        "Top": 3089.4233929878574,
-        "Width": 1125.2551921814393,
-        "Height": 249.77870799474204,
+        "Top": 3089.0900596545239,
+        "Width": 1125.5885255147732,
+        "Height": 397.64803080966431,
         "FontSize": 36.0,
         "InitialTop": 3162.4233929878574,
-        "InitialHeight": 206.77870799474181,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 170.98136414299734,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFFFC999"
       },
       {
@@ -3195,13 +3184,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7378.3820288222905,
-        "Top": 1723.0304361830511,
-        "Width": 244.09776420854905,
-        "Height": 722.03229146224089,
+        "Top": 1723.6971028497178,
+        "Width": 244.43109754188208,
+        "Height": 732.36562479557415,
         "FontSize": 18.0,
         "InitialTop": 1775.0304361830511,
-        "InitialHeight": 700.03229146224089,
-        "TextblockHeight": 42.0,
+        "InitialHeight": 653.03229146224089,
+        "TextblockHeight": 41.333333333333329,
         "Background": "#FFC1D676"
       },
       {
@@ -3216,13 +3205,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7334.88476644395,
-        "Top": 1442.8214495808411,
+        "Top": 1443.4881162475078,
         "Width": 366.0,
-        "Height": 214.0,
+        "Height": 224.33333333333326,
         "FontSize": 18.0,
         "InitialTop": 1494.8214495808411,
-        "InitialHeight": 192.0,
-        "TextblockHeight": 42.0,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 41.333333333333329,
         "Background": "#FFC1D676"
       },
       {
@@ -3238,13 +3227,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7417.1711467815267,
-        "Top": 2610.9880911117771,
-        "Width": 565.8851812858793,
-        "Height": 376.14622912488994,
+        "Top": 2611.6547577784436,
+        "Width": 560.8851812858793,
+        "Height": 375.81289579155691,
         "FontSize": 18.0,
         "InitialTop": 2662.9880911117771,
-        "InitialHeight": 197.0,
-        "TextblockHeight": 42.0,
+        "InitialHeight": 171.14622912488994,
+        "TextblockHeight": 41.333333333333329,
         "Background": "#FFFFC999"
       },
       {
@@ -3261,13 +3250,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7827.8442743538,
-        "Top": 1445.4366673129271,
-        "Width": 645.12434590471094,
+        "Top": 1445.1033339795938,
+        "Width": 641.791012571377,
         "Height": 206.29295469936392,
         "FontSize": 36.0,
         "InitialTop": 1518.4366673129271,
-        "InitialHeight": 163.29295469936392,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 146.29295469936392,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3285,13 +3274,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 7719.4799061552294,
-        "Top": 1023.1382404245601,
-        "Width": 764.1823765955196,
-        "Height": 346.524554862169,
+        "Top": 1022.8049070912267,
+        "Width": 760.1823765955196,
+        "Height": 346.52455486216911,
         "FontSize": 36.0,
         "InitialTop": 1096.13824042456,
-        "InitialHeight": 303.524554862169,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 286.524554862169,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -3306,18 +3295,18 @@
         ],
         "HasNestedGroups": false,
         "Left": 8841.26687674212,
-        "Top": 1279.6302443761917,
-        "Width": 194.0,
-        "Height": 313.0,
+        "Top": 1278.963577709525,
+        "Width": 194.66666666666606,
+        "Height": 325.0,
         "FontSize": 36.0,
         "InitialTop": 1395.6302443761917,
-        "InitialHeight": 227.0,
-        "TextblockHeight": 106.0,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 106.66666666666667,
         "Background": "#FFC1D676"
       }
     ],
-    "X": -723.11868825113288,
-    "Y": -137.79814534801875,
-    "Zoom": 0.35155993844622635
+    "X": -5122.9103898580388,
+    "Y": -672.52317108753243,
+    "Zoom": 0.71327013204207224
   }
 }
