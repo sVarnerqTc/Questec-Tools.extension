@@ -2,7 +2,7 @@
   "Uuid": "50a42b39-ee05-4327-918c-c803e03324ee",
   "IsCustomNode": false,
   "Description": null,
-  "Name": "Points_from_csv_Base_Point_script",
+  "Name": "PointsfromcsvBasePoint_script",
   "ElementResolver": {
     "ResolutionMap": {
       "Revit.Elements.Element": {
@@ -15,8 +15,7 @@
     {
       "Id": "63a3d2e76020418bbf25c78ccbff9314",
       "Name": "Select Family to Place",
-      "Type": "selection",
-      "Type2": "dropdownSelection",
+      "Type": "dropdownSelection",
       "Value": "SSW Control Point:Control Point",
       "Description": "All family types available in the document.",
       "SelectedIndex": 318
@@ -321,7 +320,6 @@
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nfrom Autodesk.Revit.DB.Structure import *\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\npoints = UnwrapElement(IN[0])\r\nfamtype = UnwrapElement(IN[1])\r\n\r\nelementlist = list()\r\n\r\nST = StructuralType.NonStructural\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n# Make sure the familysymbol is active\r\nif famtype.IsActive == False:\r\n\tfamtype.Activate()\r\n\tdoc.Regenerate()\r\nfor point in points:\r\n\tnewobj = doc.Create.NewFamilyInstance(point.ToXyz(),famtype,ST)\r\n\telementlist.append(newobj)\r\nTransactionManager.Instance.TransactionTaskDone()\r\nOUT = elementlist",
       "Engine": "CPython3",
-      "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "b027d126053e4666b7b73768ce897f47",
       "Inputs": [
@@ -671,7 +669,7 @@
     },
     {
       "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
-      "SelectedIndex": 287,
+      "SelectedIndex": 307,
       "SelectedString": "OST_Levels",
       "NodeType": "ExtensionNode",
       "Id": "5968bba3e62649019df405d7628fba8c",
@@ -1142,15 +1140,7 @@
     }
   ],
   "Dependencies": [],
-  "NodeLibraryDependencies": [
-    {
-      "Name": "Control Points.csv",
-      "ReferenceType": "External",
-      "Nodes": [
-        "177fe92ee67c45d3975bdefd3420ef25"
-      ]
-    }
-  ],
+  "NodeLibraryDependencies": [],
   "Thumbnail": "",
   "GraphDocumentationURL": null,
   "ExtensionWorkspaceData": [
@@ -1180,7 +1170,7 @@
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.16.2.5624",
+      "Version": "2.13.1.3887",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -1481,13 +1471,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 1000.4330414257056,
-        "Top": 548.12890588639868,
-        "Width": 1702.5648697984939,
-        "Height": 507.14066029957792,
+        "Top": 547.79557255306531,
+        "Width": 1696.8982031318274,
+        "Height": 507.14066029957803,
         "FontSize": 36.0,
         "InitialTop": 621.12890588639868,
         "InitialHeight": 447.14066029957792,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1505,13 +1495,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 2946.570483724016,
-        "Top": 315.762633363731,
-        "Width": 1154.8962691612674,
-        "Height": 607.71452086426279,
+        "Top": 315.42930003039771,
+        "Width": 1149.2296024946008,
+        "Height": 607.71452086426268,
         "FontSize": 36.0,
         "InitialTop": 388.762633363731,
-        "InitialHeight": 332.97329233366389,
-        "TextblockHeight": 63.0,
+        "InitialHeight": 547.71452086426279,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1527,13 +1517,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 4340.9364294953994,
-        "Top": 496.96226166911094,
+        "Top": 496.62892833577763,
         "Width": 836.5427683947828,
-        "Height": 307.166361101712,
+        "Height": 307.16636110171197,
         "FontSize": 36.0,
         "InitialTop": 569.962261669111,
         "InitialHeight": 247.16636110171203,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1552,13 +1542,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 984.88511051174714,
-        "Top": 263.90024527263995,
-        "Width": 1720.0135151503175,
-        "Height": 250.5599718322195,
+        "Top": 263.56691193930664,
+        "Width": 1713.346848483651,
+        "Height": 251.22663849888619,
         "FontSize": 36.0,
         "InitialTop": 336.90024527263995,
         "InitialHeight": 149.5,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1574,13 +1564,13 @@
         ],
         "HasNestedGroups": false,
         "Left": 4140.2320620944174,
-        "Top": 13.074400791216135,
-        "Width": 231.0,
+        "Top": 12.7410674578828,
+        "Width": 231.33333333333303,
         "Height": 406.69295699179793,
         "FontSize": 18.0,
         "InitialTop": 86.074400791216135,
         "InitialHeight": 346.69295699179793,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1597,18 +1587,18 @@
         ],
         "HasNestedGroups": false,
         "Left": 4920.7196715071541,
-        "Top": -77.897319391327869,
-        "Width": 872.49699700387009,
-        "Height": 494.57967067466745,
+        "Top": -78.230652724661212,
+        "Width": 872.83033033720312,
+        "Height": 493.57967067466745,
         "FontSize": 36.0,
         "InitialTop": -4.8973193913278692,
         "InitialHeight": 369.57967067466745,
-        "TextblockHeight": 63.0,
+        "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       }
     ],
-    "X": -475.40670578766026,
-    "Y": 284.88790255601577,
-    "Zoom": 0.30020435597461614
+    "X": 465.61146553676713,
+    "Y": 227.52894501840871,
+    "Zoom": 0.26559505570922382
   }
 }
