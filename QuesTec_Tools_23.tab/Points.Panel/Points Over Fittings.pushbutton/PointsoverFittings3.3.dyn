@@ -73,14 +73,14 @@
       "Id": "e11c6a7d6741453ca06fbb7c5fcb69b2",
       "Name": "Points Placed",
       "Type": "integer",
-      "InitialValue": "4",
+      "InitialValue": "0",
       "Description": "Visualize the node's output"
     },
     {
       "Id": "280e14663f5c4961a85c11e6aa636777",
       "Name": "Last Point Name",
-      "Type": "string",
-      "InitialValue": "RP4",
+      "Type": "unknown",
+      "InitialValue": "",
       "Description": "Visualize the node's output"
     }
   ],
@@ -174,7 +174,7 @@
     },
     {
       "ConcreteType": "DSRevitNodesUI.FamilyTypes, DSRevitNodesUI",
-      "SelectedIndex": 433,
+      "SelectedIndex": 322,
       "SelectedString": "SSW Layout Point:Control Point",
       "NodeType": "ExtensionNode",
       "Id": "13f454acdf5e44a785bb92a86c80c8ec",
@@ -1303,11 +1303,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "tee=ftg==\"6\";\nelbow=ftg==\"5\";\ncross=ftg==\"8\";\ntee||elbow||cross;",
+      "Code": "tee=ftg==\"Tee\";\nelbow=ftg==\"Elbow\";\nwye=ftg==\"Wye\";\ncross=ftg==\"Cross\";\ntee||elbow||wye||cross;",
       "Id": "65ee610a0908436590ec7cd1aa331e29",
       "Inputs": [
         {
-          "Id": "2e6c84a88f0e478f827f40376e2c90a4",
+          "Id": "1db9a04998914a3ba9d82073044b341c",
           "Name": "ftg",
           "Description": "ftg",
           "UsingDefaultValue": false,
@@ -1318,7 +1318,7 @@
       ],
       "Outputs": [
         {
-          "Id": "e0b7371d68eb486b8283eb6816208b2f",
+          "Id": "b64810b56b43435493efc14a6feae850",
           "Name": "",
           "Description": "tee",
           "UsingDefaultValue": false,
@@ -1327,7 +1327,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "3b0c8e1d103243679e1d09b753f5eb1f",
+          "Id": "873355d3fc754f56b8b29604f170fb6a",
           "Name": "",
           "Description": "elbow",
           "UsingDefaultValue": false,
@@ -1336,7 +1336,16 @@
           "KeepListStructure": false
         },
         {
-          "Id": "dbc2f083ab0e4c45843adc8061d72e30",
+          "Id": "ba7037f0f8f24b199708d19b90a31971",
+          "Name": "",
+          "Description": "wye",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "80fc67f662584ad1b6d465f4ee391cf8",
           "Name": "",
           "Description": "cross",
           "UsingDefaultValue": false,
@@ -1345,9 +1354,9 @@
           "KeepListStructure": false
         },
         {
-          "Id": "c5eb8e3b116d4749a41bd9901b468031",
+          "Id": "51fcb37781cd46519616d5c7e3b3586e",
           "Name": "",
-          "Description": "Value of expression at line 4",
+          "Description": "Value of expression at line 5",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1493,8 +1502,8 @@
     },
     {
       "Start": "e40c003992af4a909d12ad870555214e",
-      "End": "2e6c84a88f0e478f827f40376e2c90a4",
-      "Id": "60d56269b04a47aa9ca349e8a3837bd8",
+      "End": "1db9a04998914a3ba9d82073044b341c",
+      "Id": "bd6785f7fb6243118d6fb58ce1851fcf",
       "IsHidden": "False"
     },
     {
@@ -1618,15 +1627,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "c5eb8e3b116d4749a41bd9901b468031",
+      "Start": "51fcb37781cd46519616d5c7e3b3586e",
       "End": "4c4d665946ff459fa9f036dbca18d715",
-      "Id": "743a7b38caed4bd189a74f616e775241",
+      "Id": "e2a86249e9934028997a1909f7ffbd77",
       "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
-  "Thumbnail": "",
+  "Thumbnail": null,
   "GraphDocumentationURL": null,
   "ExtensionWorkspaceData": [
     {
@@ -2086,7 +2095,7 @@
         "Height": 205.01308096292792,
         "FontSize": 36.0,
         "InitialTop": 924.06513040513676,
-        "InitialHeight": 145.01308096292803,
+        "InitialHeight": 148.77393421581235,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2110,7 +2119,7 @@
         "Height": 339.040198977045,
         "FontSize": 36.0,
         "InitialTop": 472.8301384161739,
-        "InitialHeight": 279.04019897704507,
+        "InitialHeight": 247.003115327086,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2131,7 +2140,7 @@
         "Left": 532.62037517554381,
         "Top": 499.51364979496606,
         "Width": 1093.4580744977686,
-        "Height": 331.58098748675758,
+        "Height": 348.91432082009084,
         "FontSize": 36.0,
         "InitialTop": 572.84698312829937,
         "InitialHeight": 228.91432082009089,
@@ -2179,7 +2188,7 @@
         "Height": 342.13001582929257,
         "FontSize": 36.0,
         "InitialTop": 585.69099070014136,
-        "InitialHeight": 282.13001582929257,
+        "InitialHeight": 237.49265628526189,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2201,7 +2210,7 @@
         "Height": 295.78989731727529,
         "FontSize": 36.0,
         "InitialTop": 586.73738963261212,
-        "InitialHeight": 235.78989731727529,
+        "InitialHeight": 210.39523791635543,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2245,7 +2254,7 @@
         "Height": 269.00000000000011,
         "FontSize": 36.0,
         "InitialTop": 934.3148433952183,
-        "InitialHeight": 174.24314425908688,
+        "InitialHeight": 174.243144259087,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2267,7 +2276,7 @@
         "Height": 269.00000000000011,
         "FontSize": 36.0,
         "InitialTop": 933.40613503261307,
-        "InitialHeight": 205.12365226411316,
+        "InitialHeight": 205.12365226411339,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2293,7 +2302,7 @@
         "Height": 510.72044872917013,
         "FontSize": 36.0,
         "InitialTop": 1153.2897475173877,
-        "InitialHeight": 450.72044872917013,
+        "InitialHeight": 424.95466783869119,
         "TextblockHeight": 63.333333333333336,
         "Background": "#FFC1D676"
       },
@@ -2341,8 +2350,8 @@
         "Background": "#FF48B9FF"
       }
     ],
-    "X": -1944.877542151992,
-    "Y": 233.60025527405014,
-    "Zoom": 0.35320934925309488
+    "X": -2827.716263323749,
+    "Y": -266.47472173968242,
+    "Zoom": 0.63014250193908383
   }
 }
