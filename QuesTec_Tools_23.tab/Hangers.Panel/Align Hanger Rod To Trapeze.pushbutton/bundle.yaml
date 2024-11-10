@@ -1,0 +1,13 @@
+tooltip:
+  en_us: Isolate trapeze and any hangers that belong to it and run. Aligns top of rod to the trapeze. Can do multiple trapezes of the same elevation.
+
+
+title:
+  en_us: >-
+    Align Hanger
+    
+    Rod To Trapeze
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2023
