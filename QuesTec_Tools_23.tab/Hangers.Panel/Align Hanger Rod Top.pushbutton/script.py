@@ -1,4 +1,7 @@
 from pyrevit import revit, DB, script, forms
+import math  # Add this import at the top
+# Add UV definition at top
+UV = DB.UV  # Define UV class from Revit DB
 
 def setup_output():
     """Initialize and configure output window"""
@@ -57,77 +60,195 @@ def prompt_for_reference():
     return None
 
 def collect_pipe_accessories(doc, view_id, reference_element):
-    """Collect all pipe accessories from the active view at reference level/plane"""
+    """Collect all pipe accessories from the active view"""
     output = script.get_output()  # Debug output
     
     collector = (DB.FilteredElementCollector(doc, view_id)
                 .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
                 .WhereElementIsNotElementType())
     
-    # Debug: Check initial collection
+    # Get all elements
     all_elements = collector.ToElements()
-    output.print_md("Total accessories found: {}".format(len(all_elements)))
-    
-    if reference_element:
-        output.print_md("Reference element: {} at {}".format(
-            reference_element.Name,
-            reference_element.Elevation if isinstance(reference_element, DB.Level) 
-            else reference_element.BubbleEnd.Y
-        ))
-        
-        if isinstance(reference_element, DB.Level):
-            ref_elevation = reference_element.Elevation
-        else:  # Reference Plane
-            ref_elevation = reference_element.BubbleEnd.Y
-            
-        filtered_elements = []
-        for element in all_elements:
-            location = element.Location
-            if location:
-                # Debug: Print element locations
-                output.print_md("Element ID: {} at Z: {:.2f}".format(
-                    element.Id, 
-                    location.Point.Z
-                ))
-                if abs(location.Point.Z - ref_elevation) < 0.1:
-                    filtered_elements.append(element)
-        
-        output.print_md("Filtered accessories count: {}".format(len(filtered_elements)))
-        return filtered_elements
+    # output.print_md("Total accessories found: {}".format(len(all_elements)))
     
     return all_elements
 
 def process_accessories(doc, accessories):
-    """Set Rod Extn Above parameter to 24 for all accessories"""
+    """Find accessories with Rod Extn Above parameter"""
     output = script.get_output()
-    output.print_md("# Setting Rod Extension Above to 24")
-    output.print_md("---")
+    # output.print_md("# Finding accessories with Rod Extension Above parameter")
+    # output.print_md("---")
     
     if not accessories:
-        output.print_md("No accessories found")
+        # output.print_md("No accessories found")
         return []
 
-    # Start transaction
-    t = DB.Transaction(doc, "Set Rod Extension")
+    filtered_accessories = []
+    for acc in accessories:
+        param = acc.LookupParameter("Rod Extn Above")
+        if param:
+            filtered_accessories.append(acc)
+            # output.print_md("* Found Element ID: {0}".format(acc.Id))
+    
+    # output.print_md("\nTotal accessories with parameter: {0}".format(len(filtered_accessories)))
+    return filtered_accessories
+
+def calculate_elevation_differences(doc, reference_element, filtered_elements):
+    """Calculate elevation differences accounting for sloped reference planes"""
+    output = script.get_output()
+    # output.print_md("# Calculating Elevation Differences")
+    # output.print_md("---")
+    
+    if not filtered_elements:
+        output.print_md("No elements to compare")
+        return []
+    
+    # Get reference elevation or plane points
+    if isinstance(reference_element, DB.Level):
+        ref_elevation = reference_element.Elevation
+        is_sloped = False
+    else:  # Reference Plane
+        # Get both ends of reference plane
+        bubble_point = reference_element.BubbleEnd
+        free_point = reference_element.FreeEnd
+        is_sloped = True
+
+        # # Print endpoint elevations
+        # output.print_md("Reference Plane Endpoints:")
+        # output.print_md("* Bubble End: ({:.2f}, {:.2f}, {:.2f})".format(
+        #     bubble_point.X, bubble_point.Y, bubble_point.Z))
+        # output.print_md("* Free End: ({:.2f}, {:.2f}, {:.2f})".format(
+        #     free_point.X, free_point.Y, free_point.Z))
+        
+        # Calculate and print slope
+        slope_vector = free_point - bubble_point
+        run = ((slope_vector.X ** 2 + slope_vector.Y ** 2) ** 0.5)  # Horizontal distance
+        if run != 0:
+            slope = slope_vector.Z / run
+            slope_percent = slope * 100
+            # output.print_md("* Slope: {:.2f}% ({:.2f} degrees)".format(
+            #     slope_percent, 
+            #     math.degrees(math.atan(slope))
+            # ))
+        # output.print_md("---")
+        
+        # Calculate slope vector
+        slope_vector = free_point - bubble_point
+        
+    differences = []
+    for element in filtered_elements:
+        location = element.Location
+        if location:
+            element_point = location.Point
+            
+            if is_sloped:
+                # Get the XY distance from bubble point to element point
+                dx = element_point.X - bubble_point.X
+                dy = element_point.Y - bubble_point.Y
+                
+                # Calculate percentage along slope in XY plane
+                slope_run_x = free_point.X - bubble_point.X
+                slope_run_y = free_point.Y - bubble_point.Y
+                total_run = (slope_run_x ** 2 + slope_run_y ** 2) ** 0.5
+                
+                # Project element point onto slope line (in XY plane)
+                if total_run != 0:
+                    # Calculate dot product to find position along slope
+                    element_run = (dx * slope_run_x + dy * slope_run_y) / total_run
+                    # Percentage along slope (0 to 1)
+                    t = element_run / total_run
+                    # Interpolate Z value
+                    ref_elevation = bubble_point.Z + (t * slope_vector.Z)
+                else:
+                    ref_elevation = bubble_point.Z
+
+                # Debug output
+                # output.print_md("* Point: ({:.2f}, {:.2f}, {:.2f})".format(
+                #     element_point.X, element_point.Y, element_point.Z))
+                # output.print_md("* Reference Z at XY: {:.2f}".format(ref_elevation))
+            
+            elevation_diff = (ref_elevation - element_point.Z)  # Convert to inches
+            
+            differences.append({
+                'element_id': element.Id,
+                'element_xyz': (element_point.X, element_point.Y, element_point.Z),
+                'reference_z': ref_elevation,
+                'difference': elevation_diff
+            })
+            
+            # output.print_md(
+            #     "* Element ID: {0}\n"
+            #     "  * Position: ({1:.2f}, {2:.2f}, {3:.2f})\n"
+            #     "  * Reference Z at point: {4:.2f}\n"
+            #     "  * Difference: {5:.2f}".format(
+            #         element.Id,
+            #         element_point.X,
+            #         element_point.Y,
+            #         element_point.Z,
+            #         ref_elevation,
+            #         elevation_diff
+            #     )
+            # )
+    
+    set_rod_extensions(doc, differences, filtered_elements)
+    return differences
+
+def prompt_for_offset():
+    """Prompt user for additional offset value"""
+    offset_value = forms.ask_for_string(
+        prompt="Enter additional offset value in INCHES (positive or negative number):",
+        title="Rod Extension Offset"
+    )
+    
+    try:
+        return float(offset_value) if offset_value else 0
+    except ValueError:
+        forms.alert("Invalid number format. Using 0 as offset.", exitscript=False)
+        return 0
+
+def set_rod_extensions(doc, differences, filtered_elements):
+    """Set Rod Extension values based on elevation differences and offsets"""
+    output = script.get_output()
+    user_offset = prompt_for_offset()/12  # Convert to feet
+    excluded_elements = []
+    
+    t = DB.Transaction(doc, "Set Rod Extensions")
     t.Start()
     
     try:
-        modified_count = 0
-        for acc in accessories:
-            param = acc.LookupParameter("Rod Extn Above")
-            if param:
-                param.Set(24.0)  # Set to 24
-                modified_count += 1
-                output.print_md("* Modified Element ID: {0}".format(acc.Id))
-        
+        for diff, element in zip(differences, filtered_elements):
+            # First check for negative difference
+            if diff['difference']-user_offset < 0:
+                excluded_elements.append(element.Id)
+                continue
+                
+            offset_param = element.LookupParameter("Offset")
+            horiz_offset_param = element.LookupParameter("Horizontal Rod Offset")
+            rod_extn_param = element.LookupParameter("Rod Extn Above")
+            
+            if not all([offset_param, horiz_offset_param, rod_extn_param]):
+                output.print_md("* Missing required parameters for Element ID: {}".format(element.Id))
+                continue
+                
+            offset = offset_param.AsDouble() if offset_param.HasValue else 0
+            horiz_offset = horiz_offset_param.AsDouble() if horiz_offset_param.HasValue else 0
+            new_extension = diff['difference'] - offset - horiz_offset + (user_offset)
+            # if new_extension > 0:
+            rod_extn_param.Set(new_extension)
+            
         t.Commit()
-        output.print_md("\nSuccessfully modified {0} elements".format(modified_count))
+        
+        # Print excluded elements
+        if excluded_elements:
+            output.print_md("\nExcluded hangers above the reference plane:")
+            for elem_id in excluded_elements:
+                output.print_md("* Element ID: {}".format(elem_id))
+                
+        # output.print_md("\nSuccessfully updated rod extensions with offset: {:.2f}".format(user_offset))
         
     except Exception as ex:
         t.RollBack()
-        output.print_md("\nError occurred: {0}".format(str(ex)))
-    
-    return accessories
+        output.print_md("\nError setting rod extensions: {}".format(str(ex)))
 
 def print_results(output, accessories):
     """Format and print results to output window"""
@@ -140,13 +261,21 @@ def print_results(output, accessories):
         
     # Print each accessory's information
     for acc in accessories:
+        # Get location
+        location = acc.Location
+        elevation = location.Point.Z if location else 0.0
+        
+        # Get rod extension parameter
+        rod_param = acc.LookupParameter("Rod Extn Above")
+        rod_value = rod_param.AsDouble() if (rod_param and rod_param.HasValue) else "No Value"
+        
         output.print_md(
             "* **ID**: {0}\n"
             "  * Elevation: {1:.2f}\n"
             "  * Rod Extension: {2}".format(
-                acc['id'],
-                acc['elevation'] if isinstance(acc['elevation'], float) else 0.0,
-                acc['rod_extension']
+                acc.Id,
+                elevation,
+                rod_value
             )
         )
     
@@ -161,7 +290,11 @@ def main():
         reference = prompt_for_reference()
         accessories = collect_pipe_accessories(doc, active_view.Id, reference)
         processed_accessories = process_accessories(doc, accessories)
-        print_results(output, processed_accessories)
+        
+        # Calculate elevation differences
+        differences = calculate_elevation_differences(doc, reference, processed_accessories)
+        
+        # print_results(output, processed_accessories)
         
     except Exception as ex:
         forms.alert("An error occurred: " + str(ex), exitscript=True)
