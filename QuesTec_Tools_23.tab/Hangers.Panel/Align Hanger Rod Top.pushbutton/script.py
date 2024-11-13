@@ -103,15 +103,34 @@ def calculate_elevation_differences(doc, reference_element, filtered_elements):
         output.print_md("No elements to compare")
         return []
     
+    # Get project base point elevation
+    project_location = doc.ActiveProjectLocation
+    project_position = project_location.GetProjectPosition(DB.XYZ.Zero)
+    survey_to_internal_elevation = project_position.Elevation
+    base_point = (DB.FilteredElementCollector(doc)
+             .OfCategory(DB.BuiltInCategory.OST_ProjectBasePoint)
+             .FirstElement())
+    if base_point:
+        survey_to_base_point = base_point.get_Parameter(
+            DB.BuiltInParameter.BASEPOINT_ELEVATION_PARAM).AsDouble()
+        # output.print_md("Survey to Base Point Elevation: {:.2f}".format(survey_to_base_point))
+    else:
+        survey_to_base_point = 0.0
+        output.print_md("Warning: Could not find Project Base Point")
+    base_point_elevation = survey_to_base_point - survey_to_internal_elevation
+    # output.print_md("* project Base Point: {:.2f}".format(base_point_elevation))
+
     # Get reference elevation or plane points
     if isinstance(reference_element, DB.Level):
-        ref_elevation = reference_element.Elevation
+        ref_elevation = reference_element.Elevation + base_point_elevation
         is_sloped = False
     else:  # Reference Plane
         # Get both ends of reference plane
         bubble_point = reference_element.BubbleEnd
         free_point = reference_element.FreeEnd
         is_sloped = True
+        # Calculate slope vector
+        slope_vector = free_point - bubble_point
 
         # # Print endpoint elevations
         # output.print_md("Reference Plane Endpoints:")
@@ -121,20 +140,21 @@ def calculate_elevation_differences(doc, reference_element, filtered_elements):
         #     free_point.X, free_point.Y, free_point.Z))
         
         # Calculate and print slope
-        slope_vector = free_point - bubble_point
-        run = ((slope_vector.X ** 2 + slope_vector.Y ** 2) ** 0.5)  # Horizontal distance
-        if run != 0:
-            slope = slope_vector.Z / run
-            slope_percent = slope * 100
+        # slope_vector = free_point - bubble_point
+        # run = ((slope_vector.X ** 2 + slope_vector.Y ** 2) ** 0.5)  # Horizontal distance
+        # if run != 0:
+        #     slope = slope_vector.Z / run
+        #     slope_percent = slope * 100
             # output.print_md("* Slope: {:.2f}% ({:.2f} degrees)".format(
             #     slope_percent, 
             #     math.degrees(math.atan(slope))
             # ))
         # output.print_md("---")
         
-        # Calculate slope vector
-        slope_vector = free_point - bubble_point
         
+        
+    
+    
     differences = []
     for element in filtered_elements:
         location = element.Location
@@ -162,12 +182,13 @@ def calculate_elevation_differences(doc, reference_element, filtered_elements):
                 else:
                     ref_elevation = bubble_point.Z
 
-                # Debug output
+                # # Debug output
                 # output.print_md("* Point: ({:.2f}, {:.2f}, {:.2f})".format(
                 #     element_point.X, element_point.Y, element_point.Z))
                 # output.print_md("* Reference Z at XY: {:.2f}".format(ref_elevation))
+
             
-            elevation_diff = (ref_elevation - element_point.Z)  # Convert to inches
+            elevation_diff = (ref_elevation - element_point.Z)
             
             differences.append({
                 'element_id': element.Id,
