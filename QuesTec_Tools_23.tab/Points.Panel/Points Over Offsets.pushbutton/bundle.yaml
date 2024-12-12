@@ -1,0 +1,12 @@
+tooltip:
+  en_us: Place points over pipes with slope over 8 in active view
+
+title:
+  en_us: >-
+    Points Over
+  
+    Offsets
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
