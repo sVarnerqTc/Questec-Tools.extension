@@ -9,6 +9,62 @@ def setup_output():
     output.set_height(800)
     return output
 
+def validate_3d_view():
+    """Check if active view is 3D"""
+    doc = revit.doc
+    active_view = doc.ActiveView
+    
+    if not isinstance(active_view, DB.View3D):
+        forms.alert("Please run this script in a 3D view.", exitscript=True)
+        return None
+    return active_view
+
+def get_project_levels():
+    """Get sorted list of levels from project"""
+    doc = revit.doc
+    levels = DB.FilteredElementCollector(doc) \
+              .OfCategory(DB.BuiltInCategory.OST_Levels) \
+              .WhereElementIsNotElementType() \
+              .ToElements()
+    
+    # Sort levels by elevation
+    sorted_levels = sorted(levels, key=lambda x: x.Elevation)
+    return sorted_levels
+
+def select_level():
+    """Let user select level from project levels"""
+    levels = get_project_levels()
+    if not levels:
+        forms.alert("No levels found in project", exitscript=True)
+        return None
+        
+    # Create options list with level name and elevation
+    options = {"{0} ({1:.2f})".format(level.Name, level.Elevation): level 
+              for level in levels}
+    
+    selected = forms.SelectFromList.show(
+        options.keys(),
+        title="Select Level for Points",
+        multiselect=False
+    )
+    
+    if not selected:
+        forms.alert("No level selected", exitscript=True)
+        return None
+        
+    return options[selected].Elevation
+
+def collect_accessories_by_name(doc, view, name):
+    """Collect visible pipe accessories by family name"""
+    collector = DB.FilteredElementCollector(doc) \
+        .OfCategory(DB.BuiltInCategory.OST_PipeAccessory) \
+        .WhereElementIsNotElementType()
+    
+    # Filter by family name and visibility
+    return [acc for acc in collector.ToElements()
+            if name.lower() in acc.Symbol.Family.Name.lower() 
+            and not view.IsElementHidden(acc.Id)]
+
 def get_active_document_and_view():
     """Validate and return active document and view"""
     doc = revit.doc
@@ -238,3 +294,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Main execution
+output = setup_output()
+active_view = validate_3d_view()
+if not active_view:
+    script.exit()
+
+# Get level elevation from user
+target_elevation = select_level()
+if not target_elevation:
+    script.exit()
+
+# Rest of your script using target_elevation for Z coordinate...
