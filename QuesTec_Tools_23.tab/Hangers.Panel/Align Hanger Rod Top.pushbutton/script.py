@@ -245,14 +245,16 @@ def set_rod_extensions(doc, differences, filtered_elements):
             offset_param = element.LookupParameter("Offset")
             horiz_offset_param = element.LookupParameter("Horizontal Rod Offset")
             rod_extn_param = element.LookupParameter("Rod Extn Above")
+            deduct_param = element.LookupParameter("LengthtobeDeducted")
+
             
             if not rod_extn_param:
                 output.print_md("* Missing Rod Extension parameter for Element ID: {}".format(element.Id))
                 continue
                 
-            offset = offset_param.AsDouble() if (offset_param and offset_param.HasValue) else 0
-            horiz_offset = horiz_offset_param.AsDouble() if (horiz_offset_param and horiz_offset_param.HasValue) else 0
-            new_extension = diff['difference'] - offset - horiz_offset + (user_offset)
+            offset = deduct_param.AsDouble() if (deduct_param and deduct_param.HasValue) else 0 #Using LengthtobeDeducted instead of offset and horiz rod offset
+            #horiz_offset = horiz_offset_param.AsDouble() if (horiz_offset_param and horiz_offset_param.HasValue) else 0
+            new_extension = diff['difference'] - offset + (user_offset)
             # First check for negative difference
             if new_extension < 0:
                 excluded_elements.append(element.Id)
