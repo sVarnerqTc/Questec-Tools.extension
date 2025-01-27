@@ -1,8 +1,9 @@
 title:
-  en_us: Pre-Publish Checks
+  en_us: Hangers
 layout:
   - Update Hanger Elevation
   - Apply Hanger Properties
   - Apply Standard Rod Dia
   - Align Hanger Rod Top
   - Align Hanger Rod To Trapeze
+  - Hanger Script
