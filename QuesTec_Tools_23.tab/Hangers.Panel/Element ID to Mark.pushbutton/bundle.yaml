@@ -1,0 +1,11 @@
+tooltip:
+  en_us: Select Hangers or other elements, then run this tool to save the Element ID to the Mark parameter
+title:
+  en_us: >-
+    Element ID
+  
+    To Mark
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2022
