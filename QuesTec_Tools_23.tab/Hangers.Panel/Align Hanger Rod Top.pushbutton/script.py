@@ -238,9 +238,6 @@ def set_rod_extensions(doc, differences, filtered_elements):
     
     try:
         for diff, element in zip(differences, filtered_elements):
-            if diff['difference'] < 0:
-                excluded_elements.append(element.Id)
-                continue
                     
             offset_param = element.LookupParameter("Offset")
             horiz_offset_param = element.LookupParameter("Horizontal Rod Offset")

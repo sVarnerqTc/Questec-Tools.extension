@@ -89,27 +89,36 @@
   },
   "Inputs": [
     {
+      "Id": "13f454acdf5e44a785bb92a86c80c8ec",
+      "Name": "Select Family to Place",
+      "Type": "dropdownSelection",
+      "Value": "SSW Layout Point:Control Point",
+      "Description": "All family types available in the document.",
+      "SelectedIndex": 364
+    },
+    {
       "Id": "6fdb6ee178ca4cfd93f43fb03e737512",
       "Name": "Layer",
       "Type": "string",
       "Value": "0",
-      "Description": "Creates a string."
+      "Description": "Creates a string.",
+      "SelectedIndex": 0
     }
   ],
   "Outputs": [
     {
       "Id": "6cfe2375c9e44c3888d4dc90a64aadd1",
       "Name": "Points Placed",
-      "Type": "unknown",
-      "InitialValue": "",
-      "Description": "Visualize the output of node."
+      "Type": "integer",
+      "InitialValue": "2",
+      "Description": "Visualize the node's output"
     },
     {
       "Id": "1ed2913d08804b1195931eb8ce6e5a47",
       "Name": "Note:",
       "Type": "string",
       "InitialValue": "Uses current selection as the family to place points over",
-      "Description": "Visualize the output of node."
+      "Description": "Visualize the node's output"
     }
   ],
   "Nodes": [
@@ -270,7 +279,7 @@
         {
           "Id": "83a2f223b7ee47dab37102fc6b91a0bf",
           "Name": "x",
-          "Description": "x value.\n\nvar[]..[]",
+          "Description": "Basic type object to compare (e.g. bool, int, double, string, etc.)\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -279,7 +288,7 @@
         {
           "Id": "d58b78e484864eea825ce5b912b4c30f",
           "Name": "y",
-          "Description": "y value.\n\nvar[]..[]",
+          "Description": "Basic type object to compare (e.g. bool, int, double, string, etc.)\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -289,8 +298,8 @@
       "Outputs": [
         {
           "Id": "993a74a9f02d4665995cda58611f0640",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
+          "Name": "bool",
+          "Description": "Result of equality check",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -298,7 +307,7 @@
         }
       ],
       "Replication": "Longest",
-      "Description": "Equal x to y?\n\n== (x: var[]..[], y: var[]..[]): var[]..[]"
+      "Description": "Compares if x and y are equal\n\n== (x: var[]..[], y: var[]..[]): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -443,7 +452,7 @@
         },
         {
           "Id": "264c1ebf989148d1b341ea38d76d7984",
-          "Name": "unique keys",
+          "Name": "uniqueKeys",
           "Description": "key value corresponding to each group",
           "UsingDefaultValue": false,
           "Level": 2,
@@ -471,8 +480,8 @@
         },
         {
           "Id": "4e2f05fa81254a17a8c9f5c88c729039",
-          "Name": "amt",
-          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
+          "Name": "amount",
+          "Description": "Layers of list nesting to remove (-1 will remove all list nestings)\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -482,8 +491,8 @@
       "Outputs": [
         {
           "Id": "cc5d26c89e224ad8951c2cfc218682ce",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
+          "Name": "list",
+          "Description": "Flattened list by amount",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -491,7 +500,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -515,7 +524,7 @@
     },
     {
       "ConcreteType": "DSRevitNodesUI.FamilyTypes, DSRevitNodesUI",
-      "SelectedIndex": 341,
+      "SelectedIndex": 364,
       "SelectedString": "SSW Layout Point:Control Point",
       "NodeType": "ExtensionNode",
       "Id": "13f454acdf5e44a785bb92a86c80c8ec",
@@ -771,8 +780,8 @@
         },
         {
           "Id": "e2a648c41c154c81ab6aaf706acd53e3",
-          "Name": "amt",
-          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
+          "Name": "amount",
+          "Description": "Layers of list nesting to remove (-1 will remove all list nestings)\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -782,8 +791,8 @@
       "Outputs": [
         {
           "Id": "0a5116d7465540ecb635b58d191b733f",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
+          "Name": "list",
+          "Description": "Flattened list by amount",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -791,7 +800,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -988,7 +997,7 @@
       "Outputs": [
         {
           "Id": "9142de0c333941a6a3e1f3cef5976739",
-          "Name": "count",
+          "Name": "int",
           "Description": "List length.",
           "UsingDefaultValue": false,
           "Level": 2,
@@ -1026,7 +1035,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Visualize the output of node."
+      "Description": "Visualize the node's output"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -1075,7 +1084,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Visualize the output of node."
+      "Description": "Visualize the node's output"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -1126,24 +1135,17 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
-      "Id": "da78fd2a60af4b0cb0c2a9a4dbbd5d0a",
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Get the current Revit document\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The input to this node will be stored in the IN variable\r\nfamily_elements = UnwrapElement(IN[0])\r\n\r\n# Initialize a list to store element IDs\r\nelement_ids = []\r\n\r\n# Loop through the family elements and get their IDs\r\nfor element in family_elements:\r\n    if element is not None:\r\n        element_ids.append(element.Id.ToString())\r\n\r\n# Output the list of element IDs\r\nOUT = element_ids",
+      "Engine": "IronPython2",
+      "VariableInputPorts": true,
+      "Id": "10e53e45f73143248f6faf72f45cc7da",
       "Inputs": [
         {
-          "Id": "0ad5a9e05ede42da824656fba85970c5",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "2675b3720c094e8e9ea297089d08eebc",
-          "Name": "parameterName",
-          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "Id": "c243461843fd45189e8ee1fc04001547",
+          "Name": "IN[0]",
+          "Description": "Input #0",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1152,29 +1154,9 @@
       ],
       "Outputs": [
         {
-          "Id": "a2fa874da3bd40639faa8621e98ff285",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "\"STRATUS Item Tag\";",
-      "Id": "9f28a446b5984979a18ebb438a638a65",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "dc18b0a3179343bdabcfb73e38101f7a",
-          "Name": "",
-          "Description": "Value of expression at line 1",
+          "Id": "b1128b5f1b1d44269f44ec57943bed21",
+          "Name": "OUT",
+          "Description": "Result of the python script",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1182,7 +1164,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -1228,8 +1210,8 @@
     },
     {
       "Start": "4f5e19dc73c74fdfabbf8943625f7557",
-      "End": "0ad5a9e05ede42da824656fba85970c5",
-      "Id": "588db8f702114a56b8b0f8e566837c4e"
+      "End": "c243461843fd45189e8ee1fc04001547",
+      "Id": "d7190097e66c4c8eae2832ef4c49d8e4"
     },
     {
       "Start": "0cf6ce15c3414bcab1f5ad9bad1fdf43",
@@ -1362,25 +1344,43 @@
       "Id": "036c493de72b467ca7c402f56016f47f"
     },
     {
-      "Start": "a2fa874da3bd40639faa8621e98ff285",
+      "Start": "b1128b5f1b1d44269f44ec57943bed21",
       "End": "c39f74372ece451b80bfccd334cd7eca",
-      "Id": "6e2bd393fa964280939e0f05e51d5e97"
-    },
-    {
-      "Start": "dc18b0a3179343bdabcfb73e38101f7a",
-      "End": "2675b3720c094e8e9ea297089d08eebc",
-      "Id": "a659345c90a94e93965a78bcacc8c232"
+      "Id": "40a6733eca2d4ad3ba4c72ff2a8b1156"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.12",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "1.10",
+      "Data": {}
+    }
+  ],
+  "Author": "None provided",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
   "Bindings": [],
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.10.1.3976",
+      "Version": "2.12.1.8246",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -1624,8 +1624,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6000.9618670833224,
-        "Y": 673.34470047414709
+        "X": 6002.172854661394,
+        "Y": 650.33593649076136
       },
       {
         "ShowGeometry": true,
@@ -1709,23 +1709,13 @@
       },
       {
         "ShowGeometry": true,
-        "Name": "Element.GetParameterValueByName",
-        "Id": "da78fd2a60af4b0cb0c2a9a4dbbd5d0a",
+        "Name": "Get Element IDs",
+        "Id": "10e53e45f73143248f6faf72f45cc7da",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3024.5853478419276,
-        "Y": 1017.0287347694177
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Code Block",
-        "Id": "9f28a446b5984979a18ebb438a638a65",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 2670.2256256689147,
-        "Y": 1047.154168992708
+        "X": 3117.155144247125,
+        "Y": 930.11942618910632
       }
     ],
     "Annotations": [
@@ -1738,13 +1728,13 @@
           "a6323d21abcb4daaa876157b10ba838b"
         ],
         "Left": 2781.76833012867,
-        "Top": 646.931464247698,
-        "Width": 519.42719046878119,
-        "Height": 273.27867410607973,
+        "Top": 646.26479758103142,
+        "Width": 521.09385713544771,
+        "Height": 275.27867410607973,
         "FontSize": 36.0,
         "InitialTop": 742.931464247698,
         "InitialHeight": 229.27867410607973,
-        "TextblockHeight": 86.0,
+        "TextblockHeight": 86.666666666666671,
         "Background": "#FFC1D676"
       },
       {
@@ -1754,14 +1744,14 @@
           "cbce2236ac0e470ebcecd159ddce4931",
           "6cb995d51cc74c7a94cf7cb5bceecb22"
         ],
-        "Left": 5990.9618670833224,
-        "Top": 570.46778408137334,
-        "Width": 496.576101927677,
-        "Height": 198.0,
+        "Left": 5992.172854661394,
+        "Top": 570.13445074804,
+        "Width": 495.36511434960539,
+        "Height": 199.66666666666674,
         "FontSize": 36.0,
         "InitialTop": 623.46778408137334,
-        "InitialHeight": 472.17937826220486,
-        "TextblockHeight": 43.0,
+        "InitialHeight": 194.87691639277375,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1772,13 +1762,13 @@
           "92caa8fc8b5242d9822c68952c4c8df9"
         ],
         "Left": 6597.00900640706,
-        "Top": 570.35338866577933,
+        "Top": 570.020055332446,
         "Width": 512.745192023116,
-        "Height": 231.24680097654152,
+        "Height": 232.91346764320826,
         "FontSize": 36.0,
         "InitialTop": 623.35338866577933,
         "InitialHeight": 230.24680097654152,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1791,13 +1781,13 @@
           "49092d0ce3f2444c9ee753ae89177871"
         ],
         "Left": 3397.5730082730042,
-        "Top": 516.84024908893957,
-        "Width": 727.43007719650268,
-        "Height": 238.49265628526189,
+        "Top": 516.5069157556062,
+        "Width": 724.43007719650268,
+        "Height": 240.15932295192863,
         "FontSize": 36.0,
         "InitialTop": 569.84024908893957,
         "InitialHeight": 237.49265628526189,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1814,13 +1804,13 @@
           "44f7669c984a43d3b3124cbcd80c770e"
         ],
         "Left": 113.50816046002683,
-        "Top": 470.545260638091,
-        "Width": 1661.1422962389233,
-        "Height": 373.53254214459253,
+        "Top": 470.21192730475769,
+        "Width": 1662.80896290559,
+        "Height": 375.19920881125921,
         "FontSize": 36.0,
         "InitialTop": 523.545260638091,
         "InitialHeight": 372.53254214459253,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1832,13 +1822,13 @@
           "62a0379642f145a28ce15abcb1edd127"
         ],
         "Left": 1879.9849426616433,
-        "Top": 515.805442155616,
-        "Width": 786.35694089358731,
-        "Height": 214.12276241589109,
+        "Top": 515.47210882228262,
+        "Width": 783.35694089358731,
+        "Height": 215.78942908255783,
         "FontSize": 36.0,
         "InitialTop": 568.805442155616,
         "InitialHeight": 213.12276241589109,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1848,13 +1838,13 @@
           "830aefe866374deb8e0e75199da27342"
         ],
         "Left": 4554.7136728238866,
-        "Top": 573.42282052595408,
-        "Width": 359.0,
-        "Height": 183.0,
+        "Top": 573.08948719262071,
+        "Width": 358.66666666666697,
+        "Height": 183.66666666666674,
         "FontSize": 36.0,
         "InitialTop": 626.42282052595408,
         "InitialHeight": 145.0,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FFC1D676"
       },
       {
@@ -1864,13 +1854,13 @@
           "6fdb6ee178ca4cfd93f43fb03e737512"
         ],
         "Left": 6600.6686217093356,
-        "Top": 820.63026407775772,
-        "Width": 112.0,
-        "Height": 136.0,
+        "Top": 821.29693074442434,
+        "Width": 111.33333333333303,
+        "Height": 136.33333333333337,
         "FontSize": 24.0,
         "InitialTop": 888.63026407775772,
         "InitialHeight": 145.0,
-        "TextblockHeight": 58.0,
+        "TextblockHeight": 57.333333333333336,
         "Background": "#FFFF7BAC"
       },
       {
@@ -1880,13 +1870,13 @@
           "13f454acdf5e44a785bb92a86c80c8ec"
         ],
         "Left": 4185.4476756073682,
-        "Top": 708.59144710603834,
+        "Top": 708.92478043937172,
         "Width": 306.0,
-        "Height": 132.0,
+        "Height": 133.0,
         "FontSize": 24.0,
         "InitialTop": 747.59144710603834,
         "InitialHeight": 145.0,
-        "TextblockHeight": 29.0,
+        "TextblockHeight": 28.666666666666668,
         "Background": "#FFFF7BAC"
       },
       {
@@ -1897,13 +1887,13 @@
           "6cfe2375c9e44c3888d4dc90a64aadd1"
         ],
         "Left": 7193.4942427009892,
-        "Top": 569.6488208403814,
-        "Width": 366.04532888927679,
-        "Height": 162.0,
+        "Top": 569.315487507048,
+        "Width": 435.04532888927679,
+        "Height": 331.00000000000011,
         "FontSize": 36.0,
         "InitialTop": 622.6488208403814,
         "InitialHeight": 145.47873563519818,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FF48B9FF"
       },
       {
@@ -1914,18 +1904,18 @@
           "1ed2913d08804b1195931eb8ce6e5a47"
         ],
         "Left": 7186.0,
-        "Top": 778.4384526125383,
-        "Width": 876.01098370394175,
-        "Height": 162.0,
+        "Top": 778.10511927920493,
+        "Width": 796.01098370394175,
+        "Height": 331.0,
         "FontSize": 36.0,
         "InitialTop": 831.4384526125383,
         "InitialHeight": 146.5615473874617,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.333333333333336,
         "Background": "#FF48B9FF"
       }
     ],
-    "X": -43.786609926509527,
-    "Y": 76.713481991869,
-    "Zoom": 0.39374253380297797
+    "X": -62.023288456266755,
+    "Y": 229.29530943010286,
+    "Zoom": 0.28301891061012052
   }
 }
