@@ -1,0 +1,12 @@
+tooltip:
+  en_us: In the active view, fixes the main size by settting the 'Dummy Tap Radius1'  
+
+title:
+  en_us: >-
+    Fix Olet
+
+    Sizes
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2022

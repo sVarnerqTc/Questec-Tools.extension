@@ -1,0 +1,12 @@
+tooltip:
+  en_us: Assigns area names to plumbing elements based on which scope box they are located within. The area name is stored in the 'QTC Area' parameter.
+
+title:
+  en_us: >-
+    Assign
+    
+    Areas
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2022

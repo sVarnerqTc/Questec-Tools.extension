@@ -46,14 +46,17 @@ def transform_point(x, y, use_shared):
     print("Project Position East Offset (feet): {}".format(east))
     print("Project Position North Offset (feet): {}".format(north))
     print("Input coordinates - X: {}, Y: {}".format(x, y))
+
+    translated_x = x - east
+    translated_y = y - north
     
     # Apply rotation and translation
-    rotated_x = x * math.cos(angle) - y * math.sin(angle)
-    rotated_y = x * math.sin(angle) + y * math.cos(angle)
+    final_x = translated_x * math.cos(angle) - translated_y * math.sin(angle)
+    final_y = translated_x * math.sin(angle) + translated_y * math.cos(angle)
     
     # Apply survey point offset
-    final_x = rotated_x - east
-    final_y = rotated_y - north
+    #final_x = rotated_x - east
+    #final_y = rotated_y - north
 
     print("Output coordinates - X: {}, Y: {}".format(final_x, final_y))
     
@@ -103,6 +106,11 @@ def main():
             t.Start()
             family_symbol.Activate()
             t.Commit()
+
+    override_text = forms.ask_for_string(
+        prompt='Enter text to override Comments (leave empty to keep original)',
+        title='Overwrite Comments?'
+    )
     
     with open(csv_path) as csvfile:
         reader = csv.reader(csvfile)  # Changed from DictReader to reader
@@ -122,26 +130,21 @@ def main():
                 instance = doc.Create.NewFamilyInstance(
                     point, family_symbol, level, Structure.StructuralType.NonStructural)
                 
-                instance.get_Parameter(
-                    BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(row[4])  # Description from 5th column
+                 # Set Mark parameter
+                mark_param = instance.LookupParameter('Mark')
+                if mark_param:
+                    mark_param.Set(str(row[0]))
+                else:
+                  print("Could not set Mark parameter for point {}".format(row['pointNumber']))
+
+                if override_text:
+                    instance.get_Parameter(
+                        BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(override_text)  
+
+                else:
+                    instance.get_Parameter(
+                        BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(row[4]) # Description from 5th column
             
-            t.Commit()
-    
-    override_text = forms.ask_for_string(
-        prompt='Enter text to override Comments (leave empty to keep original)',
-        title='Overwrite Comments?'
-    )
-    
-    if override_text:
-        with Transaction(doc, "Override Comments") as t:
-            t.Start()
-            points = FilteredElementCollector(doc).OfCategory(
-                BuiltInCategory.OST_GenericModel).WhereElementIsNotElementType().ToElements()
-            
-            for point in points:
-                if point.Symbol.FamilyName == "SSW Control Point":
-                    point.get_Parameter(
-                        BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(override_text)
             t.Commit()
 
 if __name__ == '__main__':

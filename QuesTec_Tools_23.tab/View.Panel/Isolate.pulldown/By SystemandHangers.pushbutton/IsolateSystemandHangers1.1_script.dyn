@@ -2,7 +2,7 @@
   "Uuid": "c2922a07-f121-4e94-a53e-315b6f9d568a",
   "IsCustomNode": false,
   "Description": null,
-  "Name": "IsolateSystemandHangers_script1.1",
+  "Name": "IsolateSystemandHangers1.1_script",
   "ElementResolver": {
     "ResolutionMap": {
       "Category": {
@@ -635,7 +635,7 @@
       "NodeType": "CodeBlockNode",
       "Inputs": [
         {
-          "Id": "d194295e2ba1474787125524b2e142ed",
+          "Id": "8dec71ae1de84c28802de61d38fc4c17",
           "Name": "list",
           "Description": "list",
           "UsingDefaultValue": false,
@@ -646,7 +646,7 @@
       ],
       "Outputs": [
         {
-          "Id": "74ed3ba3644d4775ab97a82b3b91b9af",
+          "Id": "3d3705282f474619a2ad3b60adb0bfea",
           "Name": "",
           "Description": "l1",
           "UsingDefaultValue": false,
@@ -655,7 +655,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "68a86f39fe97498db2806d17534c2962",
+          "Id": "4716301b7ee24db8ba1a5ead23ddf942",
           "Name": "",
           "Description": "comms",
           "UsingDefaultValue": false,
@@ -666,7 +666,7 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly",
-      "Code": "l1=DSCore.List.Flatten(list,1);\ncomms=Revit.Elements.Element.GetParameterValueByName(l1,\"Comments\");"
+      "Code": "l1=DSCore.List.Flatten(list,1);\ncomms=Revit.Elements.Element.GetParameterValueByName(l1,\"Support Discipline\");"
     },
     {
       "ConcreteType": "DSRevitNodesUI.ElementTypes, DSRevitNodesUI",
@@ -1442,32 +1442,32 @@
     },
     {
       "Start": "4fb8c2b3c16b4dfbbb53cd89bf6c1208",
-      "End": "d194295e2ba1474787125524b2e142ed",
-      "Id": "69f6eb70bcf94a37a0b9301f2f9abd60",
+      "End": "8dec71ae1de84c28802de61d38fc4c17",
+      "Id": "0a0abfe127d74ffa8b7862e41f2b143c",
       "IsHidden": "False"
     },
     {
-      "Start": "74ed3ba3644d4775ab97a82b3b91b9af",
+      "Start": "3d3705282f474619a2ad3b60adb0bfea",
       "End": "ca3d72087f934a0c9848228e83eaa679",
-      "Id": "7862b8f46d1944d78c7c3570a386348e",
+      "Id": "b78ad820d274447e82f43d769904543f",
       "IsHidden": "False"
     },
     {
-      "Start": "74ed3ba3644d4775ab97a82b3b91b9af",
+      "Start": "3d3705282f474619a2ad3b60adb0bfea",
       "End": "084bfcb923c4419b8c4766b394823cd3",
-      "Id": "b7567bdaa4bc47d6bc95327f4c18fdbc",
+      "Id": "004b63f802d340a09bc8a0de2e05699d",
       "IsHidden": "False"
     },
     {
-      "Start": "74ed3ba3644d4775ab97a82b3b91b9af",
+      "Start": "3d3705282f474619a2ad3b60adb0bfea",
       "End": "f276a332012a45b69c1ca5ba6be4c527",
-      "Id": "5582073c07ed4478804e39167af2be8f",
+      "Id": "5a09c757fbf04a8db142a9c5c6a702b2",
       "IsHidden": "False"
     },
     {
-      "Start": "68a86f39fe97498db2806d17534c2962",
+      "Start": "4716301b7ee24db8ba1a5ead23ddf942",
       "End": "115485ab086945eab3194ba13050f8f6",
-      "Id": "8751197333e441d4add96751d3a36911",
+      "Id": "ed593984c8e84d60b7de29a78dfaa732",
       "IsHidden": "False"
     },
     {
@@ -2122,8 +2122,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 2171.2008719445303,
-    "Y": -17.737055550468568,
-    "Zoom": 0.7126788925433345
+    "X": 4175.0113976197281,
+    "Y": -390.42887176456145,
+    "Zoom": 0.80079498652922321
   }
 }

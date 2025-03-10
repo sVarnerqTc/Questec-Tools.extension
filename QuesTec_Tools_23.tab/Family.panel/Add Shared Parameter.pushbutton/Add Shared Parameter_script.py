@@ -45,26 +45,83 @@ def prompt_for_family_instance():
         return selected_element.Symbol.Family
     return None
 
-def add_or_update_shared_parameter(family_doc, shared_param, value):
-    """Add shared parameter to family and set its value, or update if already present"""
+def get_parameter_value(param_type):
+    """Prompt user for parameter value based on parameter type"""
+    if param_type == DB.ParameterType.Text:
+        return forms.ask_for_string(
+            prompt="Enter the text value for the parameter:",
+            title="Parameter Value"
+        )
+    elif param_type in [DB.ParameterType.Integer, DB.ParameterType.Number]:
+        value = forms.ask_for_string(
+            prompt="Enter the numeric value:",
+            title="Parameter Value"
+        )
+        try:
+            return float(value) if param_type == DB.ParameterType.Number else int(value)
+        except (ValueError, TypeError):
+            forms.alert("Invalid numeric value entered.")
+            return None
+    elif param_type == DB.ParameterType.YesNo:
+        return forms.alert("Select Yes/No value", options=["Yes", "No"]) == "Yes"
+    else:
+        forms.alert("Parameter type not supported for value assignment.")
+        return None
+
+def prompt_for_parameter_group():
+    """Prompt user to select a parameter group"""
+    param_groups = [
+        ("PG_ANALYSIS_RESULTS", "Analysis Results"),
+        ("PG_DATA", "Data"),
+        ("PG_GEOMETRY", "Geometry"),
+        ("PG_CONSTRUCTION", "Construction"),
+        ("PG_GRAPHICS", "Graphics"),
+        ("PG_IDENTITY_DATA", "Identity Data"),
+        ("PG_MATERIALS", "Materials"),
+        ("PG_MECHANICAL", "Mechanical"),
+        ("PG_ELECTRICAL", "Electrical"),
+        ("PG_PLUMBING", "Plumbing"),
+        ("PG_STRUCTURAL", "Structural"),
+        ("PG_TEXT", "Text"),
+        ("PG_OTHER", "Other")
+    ]
+    
+    selected = forms.SelectFromList.show(
+        [group[1] for group in param_groups],
+        title="Select Parameter Group",
+        multiselect=False
+    )
+    
+    if selected:
+        # Find the matching BuiltInParameterGroup
+        group_name = next(group[0] for group in param_groups if group[1] == selected)
+        return getattr(DB.BuiltInParameterGroup, group_name)
+    return None
+
+def prompt_for_instance_or_type():
+    """Prompt user to choose between instance and type parameter"""
+    result = forms.alert("Select parameter binding type:", 
+                        options=["Instance", "Type"])
+    return result == "Instance"
+
+def add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance, value=None):
+    """Add shared parameter to family and set its value if provided"""
     family_manager = family_doc.FamilyManager
     existing_param = family_manager.get_Parameter(shared_param.GUID)
     
     if existing_param:
-        # Parameter already exists, update its value
-        family_manager.Set(existing_param, value)
+        # Parameter already exists
+        if value is not None:
+            family_manager.Set(existing_param, value)
     else:
         # Add new shared parameter
-        param_binding = DB.InstanceBinding(DB.CategorySet())
-        param_binding.Categories.Insert(DB.Category.GetCategory(family_doc, DB.BuiltInCategory.OST_GenericModel))
-        
         family_param = family_manager.AddParameter(
             shared_param,
-            DB.BuiltInParameterGroup.PG_DATA,
-            False
+            param_group,
+            is_instance
         )
         
-        if family_param:
+        if family_param and value is not None:
             family_manager.Set(family_param, value)
 
 def main():
@@ -72,9 +129,11 @@ def main():
     if not shared_param:
         return
     
-    value = prompt_for_string_value()
-    if value is None:
+    param_group = prompt_for_parameter_group()
+    if not param_group:
         return
+        
+    is_instance = prompt_for_instance_or_type()
     
     family = prompt_for_family_instance()
     if not family:
@@ -88,22 +147,43 @@ def main():
     t = DB.Transaction(family_doc, "Add Shared Parameter")
     try:
         t.Start()
-        add_or_update_shared_parameter(family_doc, shared_param, value)
-        t.Commit()
-        family_doc.Save()
+        # Add parameter with selected group and binding
+        add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance)
         
-        # Reload the family into the active project and overwrite with parameter values
-        load_options = FamilyLoadOptions()
-        if revit.doc.LoadFamily(family_doc.PathName, load_options):
-            forms.alert("Shared parameter added, family saved, and reloaded successfully.")
+        # Then prompt for value based on parameter type
+        value = get_parameter_value(shared_param.ParameterType)
+        if value is not None:
+            add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance, value)
+            
+        t.Commit()
+        
+        # Prompt user to save
+        should_save = forms.alert("Do you want to save the changes?", options=["Yes", "No"]) == "Yes"
+        if should_save:
+            # Save the family document and get the file path
+            family_path = family_doc.PathName
+            family_doc.Save()
+            family_doc.Close(False)  # Close the document after saving
+            
+            # Create new transaction in the project document
+            with DB.Transaction(revit.doc, "Load Modified Family") as t2:
+                t2.Start()
+                load_options = FamilyLoadOptions()
+                if revit.doc.LoadFamily(family_path, load_options):
+                    forms.alert("Shared parameter added, family saved, and reloaded successfully.")
+                else:
+                    forms.alert("Failed to reload the family into the project.")
+                t2.Commit()
         else:
-            forms.alert("Failed to reload the family into the project.")
+            forms.alert("Changes were not saved.")
+            family_doc.Close(False)  # Close without saving if user chose not to save
+            
     except Exception as ex:
         if t.HasStarted():
             t.RollBack()
         forms.alert("Failed to add shared parameter: {}".format(str(ex)))
-    finally:
-        family_doc.Close(False)
+        if family_doc:  # Close the document if it's still open after an error
+            family_doc.Close(False)
 
 if __name__ == "__main__":
     main()
