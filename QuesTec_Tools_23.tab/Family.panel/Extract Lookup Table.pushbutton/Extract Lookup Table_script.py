@@ -7,6 +7,7 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import *
 from pyrevit import script
 from pyrevit import revit
+from pyrevit import forms
 import csv
 import os
 import re
@@ -62,6 +63,13 @@ def get_selected_families(uidoc):
         pass
     return families
 
+def select_folder():
+    """Prompt user to select a folder for saving files"""
+    default_path = os.path.expanduser("~\\Desktop")
+    selected_folder = forms.pick_folder(title="Select Folder to Save Lookup Tables", 
+                                        default=default_path)
+    return selected_folder
+
 # Get current document and UI application
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
@@ -79,10 +87,15 @@ try:
     if not families:
         print("Please select at least one family instance")
         script.exit()
+    
+    # Prompt user to select a folder
+    output_folder = select_folder()
+    if not output_folder:
+        print("No folder selected. Operation canceled.")
+        script.exit()
         
-    # Create desktop path and ensure it exists
-    desktop = os.path.expanduser("~\\Desktop")
-    ensure_directory_exists(desktop)
+    # Ensure selected folder exists
+    ensure_directory_exists(output_folder)
     
     # Process each family
     for family in families:
@@ -117,7 +130,7 @@ try:
             
             # Export each size table
             for table_name in table_names:
-                table_path = os.path.join(desktop, "{}_{}.csv".format(
+                table_path = os.path.join(output_folder, "{}_{}.csv".format(
                     safe_filename,
                     sanitize_filename(table_name)
                 ))
@@ -132,7 +145,7 @@ try:
                 family_doc.Close(False)
             continue
             
-    print("Processing complete")
+    print("Processing complete - Files saved to: {}".format(output_folder))
     script.exit()
     
 except Exception as e:
