@@ -42,7 +42,7 @@ view_elements = DB.FilteredElementCollector(revit.doc, revit.active_view.Id)\
 
 # Filter elements based on system types and support disciplines
 for element in view_elements:
-    if isinstance(element, (DB.Plumbing.Pipe, DB.PlumbingUtils.Fitting, DB.FamilyInstance)):
+    if isinstance(element, (DB.Plumbing.Pipe, DB.Plumbing.PipeFitting, DB.FamilyInstance)):
         system_type_param = element.get_Parameter(DB.BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM)
         if system_type_param:
             system_type_id = system_type_param.AsElementId()
