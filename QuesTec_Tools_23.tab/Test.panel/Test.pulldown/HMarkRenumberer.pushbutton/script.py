@@ -51,7 +51,7 @@ def load_saved_marks():
             return json.loads(json_string)
         return {}
     except Exception as e:
-        output.print_md(f"**Error loading saved marks: {str(e)}**")
+        output.print_md("**Error loading saved marks: {}**".format(str(e)))
         return {}
 
 # Save marks to project
@@ -71,7 +71,7 @@ def save_marks(saved_marks):
             
         output.print_md("**Marks saved to Revit project**")
     except Exception as e:
-        output.print_md(f"**Error saving marks: {str(e)}**")
+        output.print_md("**Error saving marks: {}**".format(str(e)))
 
 # Get selected elements
 selected_ids = uidoc.Selection.GetElementIds()
@@ -154,10 +154,10 @@ with revit.Transaction('Renumber Elements with H Prefix'):
             param.Set(new_mark)
             elem_id_str = str(elem.Id.IntegerValue)
             saved_marks[elem_id_str] = new_mark
-            output.print_md(f"Set element ID: {elem.Id} to mark: {new_mark}")
+            output.print_md("Set element ID: {} to mark: {}".format(elem.Id, new_mark))
             current_number += 1
         except Exception as e:
-            output.print_md(f"**Error**: Could not set mark for element ID: {elem.Id} - {str(e)}")
+            output.print_md("**Error**: Could not set mark for element ID: {} - {}".format(elem.Id, str(e)))
 
 # Save the updated marks
 save_marks(saved_marks)
@@ -188,8 +188,8 @@ def restore_marks():
             for elem, _, saved_mark in mismatches:
                 mark_param = elem.LookupParameter('Mark')
                 mark_param.Set(saved_mark)
-                output.print_md(f"Restored element ID: {elem.Id} to mark: {saved_mark}")
-        forms.alert(f'Restored {len(mismatches)} elements to their saved marks.', title='Marks Restored')
+                output.print_md("Restored element ID: {} to mark: {}".format(elem.Id, saved_mark))
+        forms.alert('Restored {} elements to their saved marks.'.format(len(mismatches)), title='Marks Restored')
     else:
         forms.alert('All marks match their saved values.', title='No Restoration Needed')
 
@@ -199,4 +199,8 @@ output.print_md("### Additional Tools")
 output.add_button("Verify & Restore Marks", restore_marks)
 
 # Report success
-forms.alert(f'Successfully renumbered {current_number - start_number} elements from H{start_number} to H{current_number - 1}.\n\nMarks have been saved and can be restored if changed.', title='Renumbering Complete')
+forms.alert('Successfully renumbered {} elements from H{} to H{}.\n\nMarks have been saved and can be restored if changed.'.format(
+    current_number - start_number, 
+    start_number, 
+    current_number - 1), 
+    title='Renumbering Complete')
