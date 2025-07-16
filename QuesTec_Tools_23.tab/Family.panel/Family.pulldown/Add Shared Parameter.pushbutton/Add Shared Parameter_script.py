@@ -45,25 +45,38 @@ def prompt_for_family_instance():
         return selected_element.Symbol.Family
     return None
 
-def get_parameter_value(param_type):
+def get_parameter_value(definition):
     """Prompt user for parameter value based on parameter type"""
-    if param_type == DB.ParameterType.Text:
+    storage_type = definition.GetDataType()
+    
+    if storage_type == DB.StorageType.String:
         return forms.ask_for_string(
             prompt="Enter the text value for the parameter:",
             title="Parameter Value"
         )
-    elif param_type in [DB.ParameterType.Integer, DB.ParameterType.Number]:
+    elif storage_type == DB.StorageType.Integer:
+        value = forms.ask_for_string(
+            prompt="Enter the integer value:",
+            title="Parameter Value"
+        )
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            forms.alert("Invalid integer value entered.")
+            return None
+    elif storage_type == DB.StorageType.Double:
         value = forms.ask_for_string(
             prompt="Enter the numeric value:",
             title="Parameter Value"
         )
         try:
-            return float(value) if param_type == DB.ParameterType.Number else int(value)
+            return float(value)
         except (ValueError, TypeError):
             forms.alert("Invalid numeric value entered.")
             return None
-    elif param_type == DB.ParameterType.YesNo:
-        return forms.alert("Select Yes/No value", options=["Yes", "No"]) == "Yes"
+    elif storage_type == DB.StorageType.ElementId:
+        forms.alert("ElementId parameter type is not supported for direct value assignment.")
+        return None
     else:
         forms.alert("Parameter type not supported for value assignment.")
         return None
@@ -129,6 +142,10 @@ def main():
     if not shared_param:
         return
     
+    # Debug the storage type of the shared parameter
+    storage_type = shared_param.GetDataType()
+    forms.alert("Selected parameter storage type: {}".format(storage_type))
+    
     param_group = prompt_for_parameter_group()
     if not param_group:
         return
@@ -151,11 +168,19 @@ def main():
         add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance)
         
         # Then prompt for value based on parameter type
-        value = get_parameter_value(shared_param.ParameterType)
+        value = get_parameter_value(shared_param)
         if value is not None:
             add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance, value)
             
         t.Commit()
+        
+        # Add debug to check the added parameter
+        added_param = family_doc.FamilyManager.get_Parameter(shared_param.GUID)
+        if added_param:
+            forms.alert("Added parameter definition name: {}\nStorage type: {}".format(
+                added_param.Definition.Name,
+                added_param.StorageType
+            ))
         
         # Prompt user to save
         should_save = forms.alert("Do you want to save the changes?", options=["Yes", "No"]) == "Yes"

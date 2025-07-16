@@ -47,7 +47,7 @@ def prompt_for_geometry_selection():
         elif selected_type == 'Face':
             output.print_md("Please select a face in the model...")
             face_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Face,
+                DB.Selection.ObjectType.Face,
                 "Select a face"
             )
             element = doc.GetElement(face_ref.ElementId)
@@ -80,7 +80,7 @@ def prompt_for_geometry_selection():
         elif selected_type == 'Edge':
             output.print_md("Please select an edge in the model...")
             edge_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Edge,
+                DB.Selection.ObjectType.Edge,
                 "Select an edge"
             )
             element = doc.GetElement(edge_ref.ElementId)
@@ -111,7 +111,7 @@ def prompt_for_geometry_selection():
         elif selected_type == 'Point on Element':
             output.print_md("Please select a point on an element...")
             point_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Element,
+                DB.Selection.ObjectType.Element,
                 "Select an element to get its location point"
             )
             element = doc.GetElement(point_ref.ElementId)
@@ -259,6 +259,29 @@ def calculate_elevation_differences(doc, reference_data, reference_type, filtere
         is_sloped = False
         ref_elevation = reference_data['point'].Z + base_point_elevation
         output.print_md("Using geometry reference point at elevation: {:.2f}".format(ref_elevation))
+
+        # # Print endpoint elevations
+        # output.print_md("Reference Plane Endpoints:")
+        # output.print_md("* Bubble End: ({:.2f}, {:.2f}, {:.2f})".format(
+        #     bubble_point.X, bubble_point.Y, bubble_point.Z))
+        # output.print_md("* Free End: ({:.2f}, {:.2f}, {:.2f})".format(
+        #     free_point.X, free_point.Y, free_point.Z))
+        
+        # Calculate and print slope
+        # slope_vector = free_point - bubble_point
+        # run = ((slope_vector.X ** 2 + slope_vector.Y ** 2) ** 0.5)  # Horizontal distance
+        # if run != 0:
+        #     slope = slope_vector.Z / run
+        #     slope_percent = slope * 100
+            # output.print_md("* Slope: {:.2f}% ({:.2f} degrees)".format(
+            #     slope_percent, 
+            #     math.degrees(math.atan(slope))
+            # ))
+        # output.print_md("---")
+        
+        
+        
+    
     
     differences = []
     for element in filtered_elements:

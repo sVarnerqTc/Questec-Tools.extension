@@ -1,69 +1,10 @@
 from pyrevit import revit, DB, script, forms
-import math  # Add this import at the top
-# Add UV definition at top
-UV = DB.UV  # Define UV class from Revit DB
 
 def setup_output():
     """Initialize and configure output window"""
     output = script.get_output()
     output.set_height(800)
     return output
-
-def validate_3d_view():
-    """Check if active view is 3D"""
-    doc = revit.doc
-    active_view = doc.ActiveView
-    
-    if not isinstance(active_view, DB.View3D):
-        forms.alert("Please run this script in a 3D view.", exitscript=True)
-        return None
-    return active_view
-
-def get_project_levels():
-    """Get sorted list of levels from project"""
-    doc = revit.doc
-    levels = DB.FilteredElementCollector(doc) \
-              .OfCategory(DB.BuiltInCategory.OST_Levels) \
-              .WhereElementIsNotElementType() \
-              .ToElements()
-    
-    # Sort levels by elevation
-    sorted_levels = sorted(levels, key=lambda x: x.Elevation)
-    return sorted_levels
-
-def select_level():
-    """Let user select level from project levels"""
-    levels = get_project_levels()
-    if not levels:
-        forms.alert("No levels found in project", exitscript=True)
-        return None
-        
-    # Create options list with level name and elevation
-    options = {"{0} ({1:.2f})".format(level.Name, level.Elevation): level 
-              for level in levels}
-    
-    selected = forms.SelectFromList.show(
-        options.keys(),
-        title="Select Level for Points",
-        multiselect=False
-    )
-    
-    if not selected:
-        forms.alert("No level selected", exitscript=True)
-        return None
-        
-    return options[selected].Elevation
-
-def collect_accessories_by_name(doc, view, name):
-    """Collect visible pipe accessories by family name"""
-    collector = DB.FilteredElementCollector(doc) \
-        .OfCategory(DB.BuiltInCategory.OST_PipeAccessory) \
-        .WhereElementIsNotElementType()
-    
-    # Filter by family name and visibility
-    return [acc for acc in collector.ToElements()
-            if name.lower() in acc.Symbol.Family.Name.lower() 
-            and not view.IsElementHidden(acc.Id)]
 
 def get_active_document_and_view():
     """Validate and return active document and view"""
@@ -114,7 +55,6 @@ def get_trapeze_reference():
     # All elevations match, return first trapeze and elevation
     return trapezes[0], list(elevations)[0]
 
-# Replace prompt_for_reference() calls with:
 def get_reference_elevation():
     """Get reference elevation from trapeze"""
     trapeze, elevation = get_trapeze_reference()
@@ -243,37 +183,6 @@ def set_rod_extensions(doc, differences, filtered_elements):
         t.RollBack()
         output.print_md("\nError setting rod extensions: {}".format(str(ex)))
 
-def print_results(output, accessories):
-    """Format and print results to output window"""
-    output.print_md("# Pipe Accessories Information")
-    output.print_md("---")
-    
-    if not accessories:
-        output.print_md("No accessories found with Rod Extension parameter.")
-        return
-        
-    # Print each accessory's information
-    for acc in accessories:
-        # Get location
-        location = acc.Location
-        elevation = location.Point.Z if location else 0.0
-        
-        # Get rod extension parameter
-        rod_param = acc.LookupParameter("Rod Extn Above")
-        rod_value = rod_param.AsDouble() if (rod_param and rod_param.HasValue) else "No Value"
-        
-        output.print_md(
-            "* **ID**: {0}\n"
-            "  * Elevation: {1:.2f}\n"
-            "  * Rod Extension: {2}".format(
-                acc.Id,
-                elevation,
-                rod_value
-            )
-        )
-    
-    output.print_md("\n**Total Found: " + str(len(accessories)) + "**")
-
 def main():
     """Main execution function"""
     output = setup_output()
@@ -294,16 +203,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# Main execution
-output = setup_output()
-active_view = validate_3d_view()
-if not active_view:
-    script.exit()
-
-# Get level elevation from user
-target_elevation = select_level()
-if not target_elevation:
-    script.exit()
-
-# Rest of your script using target_elevation for Z coordinate...
+# This script aligns hanger rods to a trapeze reference elevation in Revit.
+# It collects pipe accessories, calculates elevation differences,
+# and updates rod extension parameters accordingly.

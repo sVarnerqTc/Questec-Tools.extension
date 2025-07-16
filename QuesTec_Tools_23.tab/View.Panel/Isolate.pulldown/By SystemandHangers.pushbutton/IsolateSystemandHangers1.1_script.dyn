@@ -1170,7 +1170,7 @@
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\nlist = IN[0]\r\nout = []\r\nfor sublist in list:\r\n\tif True in sublist:\r\n\t\tout.append(True)\r\n\telse:\r\n\t\tout.append(False)\r\nOUT = out\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ninput_list = IN[0]\r\nout = []\r\n\r\nfor item in input_list:\r\n    if isinstance(item, list):  # If item is a sublist\r\n        out.append(True in item)\r\n    else:  # If item is a single boolean\r\n        out.append(bool(item))\r\n\r\nOUT = out",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1203,7 +1203,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
-      "WatchWidth": 200.0,
+      "WatchWidth": 260.0,
       "WatchHeight": 38.0,
       "Id": "40da6d78ce7c48b5bfd530de5def1142",
       "NodeType": "ExtensionNode",
@@ -1263,7 +1263,7 @@
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "Code": "if IN[0] >1:\r\n\tOUT = IN[1]\r\nelse:\r\n\tOUT = IN[2]",
+      "Code": "import clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\n# Unwrap elements if needed\r\ninput0 = UnwrapElement(IN[0]) if IN[0] is not None else None\r\ninput1 = UnwrapElement(IN[1]) if IN[1] is not None else None\r\ninput2 = UnwrapElement(IN[2]) if IN[2] is not None else None\r\n\r\ntry:\r\n    if input0 is not None and input0 > 1:\r\n        OUT = input1\r\n    else:\r\n        OUT = input2\r\nexcept Exception as e:\r\n    OUT = \"Error: {}\".format(str(e))\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1632,7 +1632,7 @@
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
-      "HasRunWithoutCrash": false,
+      "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
       "Version": "2.19.3.6394",
       "RunType": "Manual",
@@ -1849,8 +1849,8 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "ShowGeometry": true,
-        "X": -5197.04648205678,
-        "Y": 1105.26954085367
+        "X": -5160.0518249306433,
+        "Y": 1122.1442967357673
       },
       {
         "Id": "e859eac85dd44f9191e19dd3fcf36bcf",
@@ -1939,8 +1939,8 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "ShowGeometry": true,
-        "X": -5708.33445255087,
-        "Y": 1110.8462303145
+        "X": -5714.8356025078619,
+        "Y": 1144.4355050922893
       },
       {
         "Id": "3cd541b915e2479bb9c6c16ffc210dd1",
@@ -1959,8 +1959,8 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "ShowGeometry": true,
-        "X": -4877.839479638923,
-        "Y": 1121.588079927511
+        "X": -4890.171032014302,
+        "Y": 1246.2016618260775
       },
       {
         "Id": "40da6d78ce7c48b5bfd530de5def1142",
@@ -1969,8 +1969,8 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "ShowGeometry": true,
-        "X": -4042.1436733296673,
-        "Y": 1330.272538770176
+        "X": -4136.3355089555735,
+        "Y": 1382.9561078490729
       },
       {
         "Id": "e4e46508bfcc4a68abe329a7a0d7517b",
@@ -1989,7 +1989,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "ShowGeometry": true,
-        "X": -4584.1204559056569,
+        "X": -4584.12045590566,
         "Y": 1187.53840310584
       }
     ],
@@ -2084,7 +2084,7 @@
         "Left": -3274.029424437791,
         "Top": 691.48001345148066,
         "Width": 989.12759848215956,
-        "Height": 365.20790997951315,
+        "Height": 377.20790997951315,
         "FontSize": 36.0,
         "GroupStyleId": "00000000-0000-0000-0000-000000000000",
         "InitialTop": 808.14668011814729,
@@ -2122,8 +2122,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 4175.0113976197281,
-    "Y": -390.42887176456145,
-    "Zoom": 0.80079498652922321
+    "X": 3583.1055108849755,
+    "Y": -199.82626755619788,
+    "Zoom": 0.59584444340781439
   }
 }

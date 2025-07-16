@@ -1,0 +1,12 @@
+tooltip:
+  en_us: In the active view, aligne top of hanger rod to selected level or reference plane
+
+title:
+  en_us: >-
+    Align Hanger
+    
+    Rod Top
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2022
