@@ -30,7 +30,26 @@ def transform_point(x, y, use_shared):
         return XYZ(x, y, 0)
     
     try:
-        # For shared coordinates, we need to transform from survey coordinates to project coordinates
+        # For shared coordinates, use Revit's built-in transformation
+        project_location = doc.ActiveProjectLocation
+        
+        # Create a point in shared coordinates
+        shared_point = XYZ(x, y, 0)
+        
+        # Transform from shared coordinates to project coordinates
+        # This uses Revit's internal transformation logic
+        project_point = project_location.SharedToProject(shared_point)
+        
+        print("Input shared coordinates - X: {}, Y: {}".format(x, y))
+        print("Transformed project coordinates - X: {}, Y: {}".format(project_point.X, project_point.Y))
+        
+        return XYZ(project_point.X, project_point.Y, 0)
+        
+    except Exception as e:
+        print("Error in coordinate transformation: {}".format(str(e)))
+        print("Falling back to manual transformation")
+        
+        # Fallback to manual transformation if built-in method fails
         project_location = doc.ActiveProjectLocation
         project_position = project_location.GetProjectPosition(XYZ(0, 0, 0))
         
@@ -59,26 +78,30 @@ def transform_point(x, y, use_shared):
         print("Survey Point North (feet): {}".format(survey_point_north))
         print("Input shared coordinates - X: {}, Y: {}".format(x, y))
         
-        # Transform from shared coordinates to project coordinates
-        # Step 1: Apply rotation (counter-clockwise rotation by negative angle)
+        # Apply rotation transformation (inverse of true north rotation)
         cos_angle = math.cos(-angle)
         sin_angle = math.sin(-angle)
         rotated_x = x * cos_angle - y * sin_angle
         rotated_y = x * sin_angle + y * cos_angle
         
-        # Step 2: Apply translation (subtract the offsets to convert to project coordinates)
-        final_x = rotated_x - east_offset
-        final_y = rotated_y - north_offset
+        # Apply the correct transformation formula for offsets
+        # For the x offset: -PPE*cos(a) - PPN*sin(a)
+        # For the y offset: -PPN*cos(a) + PPE*sin(a)
+        # where PPE = east_offset, PPN = north_offset, a = angle
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        
+        x_offset = -east_offset * cos_a - north_offset * sin_a
+        y_offset = -north_offset * cos_a + east_offset * sin_a
+        
+        final_x = rotated_x + x_offset
+        final_y = rotated_y + y_offset
         
         print("After rotation - X: {}, Y: {}".format(rotated_x, rotated_y))
+        print("Calculated offsets - X: {}, Y: {}".format(x_offset, y_offset))
         print("Final project coordinates - X: {}, Y: {}".format(final_x, final_y))
         
         return XYZ(final_x, final_y, 0)
-        
-    except Exception as e:
-        print("Error in coordinate transformation: {}".format(str(e)))
-        print("Falling back to project internal coordinates")
-        return XYZ(x, y, 0)
 
 def verify_csv_headers(headers):
     required = ['pointNumber', 'X', 'Y', 'Z', 'Description', 'Layer']
