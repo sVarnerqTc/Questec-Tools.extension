@@ -151,38 +151,64 @@ def main():
         title='Overwrite Comments?'
     )
     
-    with open(csv_path) as csvfile:
-        reader = csv.reader(csvfile)  # Changed from DictReader to reader
-        next(reader)  # Skip header row
+    with open(csv_path, 'rb') as csvfile:
+        # Read the file and handle line endings
+        content = csvfile.read().replace('\r\n', '\n').replace('\r', '\n')
+        lines = content.strip().split('\n')
         
         with Transaction(doc, "Place Control Points") as t:
             t.Start()
             
-            for row in reader:
-                point = transform_point(
-                    float(row[1]),  # X value from 2nd column
-                    float(row[2]),  # Y value from 3rd column
-                    use_shared
-                )
-                point = XYZ(point.X, point.Y, level.Elevation)
+            for row_num, line in enumerate(lines, 1):
+                # Skip empty lines
+                if not line.strip():
+                    continue
                 
-                instance = doc.Create.NewFamilyInstance(
-                    point, family_symbol, level, StructuralType.NonStructural)
+                # Split the line by comma
+                row = [field.strip() for field in line.split(',')]
                 
-                 # Set Mark parameter
-                mark_param = instance.LookupParameter('Mark')
-                if mark_param:
-                    mark_param.Set(str(row[0]))  # Point number from 1st column
-                else:
-                    print("Could not set Mark parameter for point {}".format(row[0]))
+                # Skip rows with insufficient data
+                if len(row) < 3:
+                    print("Skipping row {}: insufficient data - {}".format(row_num, row))
+                    continue
+                
+                try:
+                    # Extract coordinates, handling potential extra/missing columns
+                    point_number = str(row[0]).strip()
+                    x_coord = float(row[1])
+                    y_coord = float(row[2])
+                    
+                    # Z coordinate (optional, default to 0)
+                    z_coord = float(row[3]) if len(row) > 3 and row[3].strip() else 0
+                    
+                    # Description (optional, default to empty)
+                    description = str(row[4]).strip() if len(row) > 4 and row[4].strip() else ""
+                    
+                    print("Processing point: {} at ({}, {})".format(point_number, x_coord, y_coord))
+                    
+                    point = transform_point(x_coord, y_coord, use_shared)
+                    point = XYZ(point.X, point.Y, level.Elevation)
+                    
+                    instance = doc.Create.NewFamilyInstance(
+                        point, family_symbol, level, StructuralType.NonStructural)
+                    
+                    # Set Mark parameter
+                    mark_param = instance.LookupParameter('Mark')
+                    if mark_param:
+                        mark_param.Set(point_number)
+                    else:
+                        print("Could not set Mark parameter for point {}".format(point_number))
 
-                if override_text:
-                    instance.get_Parameter(
-                        BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(override_text)  
-
-                else:
-                    instance.get_Parameter(
-                        BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(row[4]) # Description from 5th column
+                    if override_text:
+                        instance.get_Parameter(
+                            BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(override_text)  
+                    else:
+                        instance.get_Parameter(
+                            BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(description)
+                            
+                except (ValueError, IndexError) as e:
+                    print("Error processing row {}: {} - Data: {}".format(row_num, str(e), row))
+                    continue
             
             t.Commit()
 
