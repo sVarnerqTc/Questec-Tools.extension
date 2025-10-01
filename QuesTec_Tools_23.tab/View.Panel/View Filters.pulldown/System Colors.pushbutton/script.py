@@ -1,7 +1,8 @@
 
 """
-pyRevit script to create view filters for all piping and duct system types
+Create view filters for all piping and duct system types
 with solid color overrides based on system line colors.
+Shift-click to remove all system type view filters
 """
 
 import clr
