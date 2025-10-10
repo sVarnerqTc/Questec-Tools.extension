@@ -158,15 +158,22 @@ def set_rod_extensions(doc, differences, filtered_elements):
                 
             offset_param = element.LookupParameter("Offset")
             horiz_offset_param = element.LookupParameter("Horizontal Rod Offset")
+            deduct_param = element.LookupParameter("LengthtobeDeducted")
             rod_extn_param = element.LookupParameter("Rod Extn Above")
             
-            if not all([offset_param, horiz_offset_param, rod_extn_param]):
-                output.print_md("* Missing required parameters for Element ID: {}".format(element.Id))
+            if not rod_extn_param:
+                output.print_md("* Missing Rod Extn Above parameter for Element ID: {}".format(element.Id))
                 continue
+            
+            # Use Offset and Horizontal Rod Offset if available, otherwise use LengthtobeDeducted
+            if offset_param or horiz_offset_param:
+                offset = offset_param.AsDouble() if (offset_param and offset_param.HasValue) else 0
+                horiz_offset = horiz_offset_param.AsDouble() if (horiz_offset_param and horiz_offset_param.HasValue) else 0
+                new_extension = diff['difference'] - offset - horiz_offset
+            else:
+                deduct_value = deduct_param.AsDouble() if (deduct_param and deduct_param.HasValue) else 0
+                new_extension = diff['difference'] - deduct_value
                 
-            offset = offset_param.AsDouble() if offset_param.HasValue else 0
-            horiz_offset = horiz_offset_param.AsDouble() if horiz_offset_param.HasValue else 0
-            new_extension = diff['difference'] - offset - horiz_offset
             rod_extn_param.Set(new_extension)
             
         t.Commit()
