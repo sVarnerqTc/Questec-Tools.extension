@@ -1,6 +1,6 @@
 """
-pyRevit shift-click script to remove all system type view filters
-created by the main script (without colors) and restore filter visibility.
+pyRevit shift-click script to remove all assembly view filters
+created by the main script by assembly name and restore filter visibility.
 """
 
 import clr
@@ -33,12 +33,10 @@ def remove_system_type_filters():
             filter_name = filter_element.Name
             
             # Check if filter name starts with our naming conventions
-            if (filter_name.startswith("Pipe System - ") or 
-                filter_name.startswith("Duct System - ") or 
-                filter_name.startswith("Support - ")):
+            if (filter_name.startswith("Assembly_") ):
                 filters_to_remove.append(filter_element)
         
-        # Remove filters from active view first, then delete from document
+        # Remove filters from active view
         for filter_element in filters_to_remove:
             try:
                 filter_name = filter_element.Name

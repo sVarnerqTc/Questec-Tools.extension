@@ -158,6 +158,133 @@ def create_view_filter(filter_name, category_ids, system_type_name, is_piping=Tr
     
     return view_filter
 
+def get_support_disciplines():
+    """Get all unique Support Discipline values from pipe accessories in current view"""
+    support_disciplines = set()
+    
+    # Get all pipe accessories in current view
+    collector = FilteredElementCollector(doc, active_view.Id)
+    pipe_accessories = collector.OfCategory(BuiltInCategory.OST_PipeAccessory).WhereElementIsNotElementType().ToElements()
+    
+    for accessory in pipe_accessories:
+        try:
+            # Try to get Support Discipline parameter
+            support_discipline = None
+            
+            # Method 1: Try by parameter name
+            try:
+                for param in accessory.Parameters:
+                    param_name = param.Definition.Name
+                    if param_name == "Support Discipline" and param.HasValue:
+                        if param.StorageType == StorageType.String:
+                            support_discipline = param.AsString()
+                            break
+            except Exception as e:
+                pass
+            
+            if support_discipline and support_discipline.strip():
+                support_disciplines.add(support_discipline)
+                
+        except Exception as e:
+            continue
+    
+    return list(support_disciplines)
+
+def create_support_filter(filter_name, support_discipline_value):
+    """Create a view filter for pipe accessories based on Support Discipline parameter"""
+    
+    # Create filter categories - only pipe accessories
+    categories = List[ElementId]()
+    categories.Add(Category.GetCategory(doc, BuiltInCategory.OST_PipeAccessory).Id)
+    
+    # Create parameter filter rule using string comparison with support discipline value
+    # We need to find the parameter definition for Support Discipline
+    # Since it's likely a shared parameter, we'll use a more flexible approach
+    
+    # Get a sample pipe accessory to find the parameter definition
+    collector = FilteredElementCollector(doc)
+    sample_accessory = collector.OfCategory(BuiltInCategory.OST_PipeAccessory).WhereElementIsNotElementType().FirstElement()
+    
+    support_param_def = None
+    if sample_accessory:
+        for param in sample_accessory.Parameters:
+            if param.Definition.Name == "Support Discipline":
+                support_param_def = param.Definition
+                break
+    
+    if support_param_def:
+        provider = ParameterValueProvider(support_param_def.Id)
+        evaluator = FilterStringEquals()
+        rule_value = support_discipline_value
+        rule = FilterStringRule(provider, evaluator, rule_value)
+        
+        param_filter = ElementParameterFilter(rule)
+        
+        # Create the view filter
+        view_filter = ParameterFilterElement.Create(doc, filter_name, categories, param_filter)
+        
+        return view_filter
+    
+    return None
+
+def create_blank_system_filter(filter_name, category_ids, is_piping=True):
+    """Create a view filter for elements with blank/empty system type"""
+    
+    # Create filter categories
+    categories = List[ElementId]()
+    for category_id in category_ids:
+        categories.Add(category_id)
+    
+    # Create parameter filter rule for blank/empty values
+    system_type_param_id = ElementId(BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM)
+    if not is_piping:
+        system_type_param_id = ElementId(BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM)
+    
+    provider = ParameterValueProvider(system_type_param_id)
+    evaluator = FilterStringEquals()
+    rule_value = ""  # Empty string for blank values
+    rule = FilterStringRule(provider, evaluator, rule_value)
+    
+    param_filter = ElementParameterFilter(rule)
+    
+    # Create the view filter
+    view_filter = ParameterFilterElement.Create(doc, filter_name, categories, param_filter)
+    
+    return view_filter
+
+def create_blank_support_filter(filter_name):
+    """Create a view filter for pipe accessories with blank Support Discipline parameter"""
+    
+    # Create filter categories - only pipe accessories
+    categories = List[ElementId]()
+    categories.Add(Category.GetCategory(doc, BuiltInCategory.OST_PipeAccessory).Id)
+    
+    # Get a sample pipe accessory to find the parameter definition
+    collector = FilteredElementCollector(doc)
+    sample_accessory = collector.OfCategory(BuiltInCategory.OST_PipeAccessory).WhereElementIsNotElementType().FirstElement()
+    
+    support_param_def = None
+    if sample_accessory:
+        for param in sample_accessory.Parameters:
+            if param.Definition.Name == "Support Discipline":
+                support_param_def = param.Definition
+                break
+    
+    if support_param_def:
+        provider = ParameterValueProvider(support_param_def.Id)
+        evaluator = FilterStringEquals()
+        rule_value = ""  # Empty string for blank values
+        rule = FilterStringRule(provider, evaluator, rule_value)
+        
+        param_filter = ElementParameterFilter(rule)
+        
+        # Create the view filter
+        view_filter = ParameterFilterElement.Create(doc, filter_name, categories, param_filter)
+        
+        return view_filter
+    
+    return None
+
 def main():
     """Main function to create filters and apply to active view"""
     
@@ -171,6 +298,9 @@ def main():
     try:
         # Get all system types
         piping_systems, duct_systems = get_system_types()
+        
+        # Get support disciplines
+        support_disciplines = get_support_disciplines()
         
         # Get category IDs for piping systems
         pipe_category_ids = [
@@ -248,6 +378,62 @@ def main():
             except Exception as e:
                 print("Error processing duct filter " + filter_name + ": " + str(e))
         
+        # Create filters for support disciplines
+        for support_discipline in support_disciplines:
+            filter_name = "Support - " + support_discipline
+            try:
+                if filter_name in existing_filters:
+                    # Use existing filter
+                    view_filter = existing_filters[filter_name]
+                else:
+                    # Create new filter
+                    view_filter = create_support_filter(filter_name, support_discipline)
+                
+                if view_filter:
+                    created_filters.append((view_filter, support_discipline, support_discipline))
+            except Exception as e:
+                print("Error processing support filter " + filter_name + ": " + str(e))
+        
+        # Create filters for blank/empty values
+        # Blank piping system filter
+        blank_pipe_filter_name = "Pipe System - (Blank)"
+        try:
+            if blank_pipe_filter_name in existing_filters:
+                view_filter = existing_filters[blank_pipe_filter_name]
+            else:
+                view_filter = create_blank_system_filter(blank_pipe_filter_name, pipe_category_ids, is_piping=True)
+            
+            if view_filter:
+                created_filters.append((view_filter, "(Blank)", "(Blank)"))
+        except Exception as e:
+            print("Error processing blank pipe filter: " + str(e))
+        
+        # Blank duct system filter
+        blank_duct_filter_name = "Duct System - (Blank)"
+        try:
+            if blank_duct_filter_name in existing_filters:
+                view_filter = existing_filters[blank_duct_filter_name]
+            else:
+                view_filter = create_blank_system_filter(blank_duct_filter_name, duct_category_ids, is_piping=False)
+            
+            if view_filter:
+                created_filters.append((view_filter, "(Blank)", "(Blank)"))
+        except Exception as e:
+            print("Error processing blank duct filter: " + str(e))
+        
+        # Blank support discipline filter
+        blank_support_filter_name = "Support - (Blank)"
+        try:
+            if blank_support_filter_name in existing_filters:
+                view_filter = existing_filters[blank_support_filter_name]
+            else:
+                view_filter = create_blank_support_filter(blank_support_filter_name)
+            
+            if view_filter:
+                created_filters.append((view_filter, "(Blank)", "(Blank)"))
+        except Exception as e:
+            print("Error processing blank support filter: " + str(e))
+        
         # Apply all filters to the active view (without override settings)
         for view_filter, system_name, system_abbreviation in created_filters:
             try:
@@ -259,16 +445,28 @@ def main():
                         print("Error adding filter " + view_filter.Name + " to view: " + str(add_error))
                 
                 # Set filter visibility based on selection
-                if selected_system_abbreviations is not None:
-                    if system_abbreviation in selected_system_abbreviations:
-                        active_view.SetFilterVisibility(view_filter.Id, True)
-                        #print("Made filter visible: " + view_filter.Name)
+                if view_filter.Name.startswith("Support - "):
+                    # For support filters, match visibility to system abbreviation selection
+                    if selected_system_abbreviations is not None:
+                        # Support discipline should match system abbreviation, or show blank if no match
+                        if system_abbreviation in selected_system_abbreviations or system_abbreviation == "(Blank)":
+                            active_view.SetFilterVisibility(view_filter.Id, True)
+                        else:
+                            active_view.SetFilterVisibility(view_filter.Id, False)
                     else:
-                        active_view.SetFilterVisibility(view_filter.Id, False)
-                        #print("Made filter hidden: " + view_filter.Name)
+                        # No selection, make all support filters visible
+                        active_view.SetFilterVisibility(view_filter.Id, True)
                 else:
-                    # No selection, make all filters visible
-                    active_view.SetFilterVisibility(view_filter.Id, True)
+                    # Set filter visibility based on selection for system filters
+                    if selected_system_abbreviations is not None:
+                        # Show blank filters when there's a selection (to see unassigned elements)
+                        if system_abbreviation in selected_system_abbreviations or system_abbreviation == "(Blank)":
+                            active_view.SetFilterVisibility(view_filter.Id, True)
+                        else:
+                            active_view.SetFilterVisibility(view_filter.Id, False)
+                    else:
+                        # No selection, make all filters visible
+                        active_view.SetFilterVisibility(view_filter.Id, True)
                     
             except Exception as e:
                 print("Error processing filter " + view_filter.Name + ": " + str(e))
