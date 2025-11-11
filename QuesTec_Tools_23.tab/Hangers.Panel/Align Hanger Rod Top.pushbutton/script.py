@@ -1,4 +1,5 @@
 from pyrevit import revit, DB, script, forms
+from Autodesk.Revit.UI.Selection import ObjectType
 import math  # Add this import at the top
 # Add UV definition at top
 UV = DB.UV  # Define UV class from Revit DB
@@ -47,71 +48,98 @@ def prompt_for_geometry_selection():
         elif selected_type == 'Face':
             output.print_md("Please select a face in the model...")
             face_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Face,
+                ObjectType.Face,
                 "Select a face"
             )
             element = doc.GetElement(face_ref.ElementId)
             face = element.GetGeometryObjectFromReference(face_ref)
             
-            # Get a point on the face (center if possible)
+            # Get a point on the face using the picked point
             try:
-                if hasattr(face, 'Evaluate'):
-                    # Try to get face bounds for UV parameters
-                    try:
+                # Use the GlobalPoint from the reference which represents the picked point
+                if hasattr(face_ref, 'GlobalPoint'):
+                    face_point = face_ref.GlobalPoint
+                    #output.print_md("Using picked point on face: X={:.2f}, Y={:.2f}, Z={:.2f}".format(
+                    #    face_point.X, face_point.Y, face_point.Z))
+                else:
+                    # Fallback: try to evaluate face at center
+                    if hasattr(face, 'Evaluate'):
+                        # Get face bounds and evaluate at center
                         bbox = face.GetBoundingBox()
-                        if bbox and bbox.Min and bbox.Max:
+                        if bbox and hasattr(bbox, 'Min') and hasattr(bbox, 'Max'):
                             center_uv = DB.UV((bbox.Min.U + bbox.Max.U) / 2, (bbox.Min.V + bbox.Max.V) / 2)
                             face_point = face.Evaluate(center_uv)
                         else:
-                            # Fallback: use UV(0.5, 0.5) for center
                             face_point = face.Evaluate(DB.UV(0.5, 0.5))
-                    except:
-                        # If bounding box fails, try standard center
-                        face_point = face.Evaluate(DB.UV(0.5, 0.5))
-                else:
-                    # For non-evaluable faces, use element location
-                    face_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                    else:
+                        # Final fallback: use element location
+                        face_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                        
             except Exception as face_ex:
-                output.print_md("Warning: Could not evaluate face, using element location: {}".format(str(face_ex)))
-                face_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                output.print_md("Warning evaluating face: {}".format(str(face_ex)))
+                # Use element location as fallback
+                if element.Location and hasattr(element.Location, 'Point'):
+                    face_point = element.Location.Point
+                elif element.Location and hasattr(element.Location, 'Curve'):
+                    face_point = element.Location.Curve.GetEndPoint(0)
+                else:
+                    face_point = DB.XYZ.Zero
                 
             return {'type': 'face', 'element': element, 'face': face, 'point': face_point, 'reference': face_ref}, 'geometry'
             
         elif selected_type == 'Edge':
             output.print_md("Please select an edge in the model...")
             edge_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Edge,
+                ObjectType.Edge,
                 "Select an edge"
             )
             element = doc.GetElement(edge_ref.ElementId)
             edge = element.GetGeometryObjectFromReference(edge_ref)
             
-            # Get midpoint of edge
+            # Get point on the edge using the picked point
             try:
-                if hasattr(edge, 'Evaluate'):
-                    edge_point = edge.Evaluate(0.5, True)  # Evaluate at parameter 0.5 (midpoint)
-                elif hasattr(edge, 'GetEndPoint'):
-                    # For some edge types, calculate midpoint from endpoints
-                    start_point = edge.GetEndPoint(0)
-                    end_point = edge.GetEndPoint(1)
-                    edge_point = DB.XYZ(
-                        (start_point.X + end_point.X) / 2,
-                        (start_point.Y + end_point.Y) / 2,
-                        (start_point.Z + end_point.Z) / 2
-                    )
+                # Use the GlobalPoint from the reference which represents the picked point
+                if hasattr(edge_ref, 'GlobalPoint'):
+                    edge_point = edge_ref.GlobalPoint
+                    #output.print_md("Using picked point on edge: X={:.2f}, Y={:.2f}, Z={:.2f}".format(
+                    #    edge_point.X, edge_point.Y, edge_point.Z))
                 else:
-                    # Fallback: use element location
-                    edge_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                    # Fallback: try to get edge midpoint
+                    if hasattr(edge, 'Evaluate'):
+                        edge_point = edge.Evaluate(0.5, True)  # Evaluate at parameter 0.5 (midpoint)
+                    elif hasattr(edge, 'GetEndPoint'):
+                        # Calculate midpoint from endpoints
+                        start_point = edge.GetEndPoint(0)
+                        end_point = edge.GetEndPoint(1)
+                        edge_point = DB.XYZ(
+                            (start_point.X + end_point.X) / 2,
+                            (start_point.Y + end_point.Y) / 2,
+                            (start_point.Z + end_point.Z) / 2
+                        )
+                    elif hasattr(edge, 'AsCurve'):
+                        # Try to get curve and evaluate at midpoint
+                        curve = edge.AsCurve()
+                        edge_point = curve.Evaluate(0.5, True)
+                    else:
+                        # Final fallback: use element location
+                        edge_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                        
             except Exception as edge_ex:
-                output.print_md("Warning: Could not evaluate edge, using element location: {}".format(str(edge_ex)))
-                edge_point = element.Location.Point if element.Location else DB.XYZ.Zero
+                output.print_md("Warning evaluating edge: {}".format(str(edge_ex)))
+                # Use element location as fallback
+                if element.Location and hasattr(element.Location, 'Point'):
+                    edge_point = element.Location.Point
+                elif element.Location and hasattr(element.Location, 'Curve'):
+                    edge_point = element.Location.Curve.Evaluate(0.5, True)
+                else:
+                    edge_point = DB.XYZ.Zero
                 
             return {'type': 'edge', 'element': element, 'edge': edge, 'point': edge_point, 'reference': edge_ref}, 'geometry'
             
         elif selected_type == 'Point on Element':
             output.print_md("Please select a point on an element...")
             point_ref = uidoc.Selection.PickObject(
-                DB.UI.Selection.ObjectType.Element,
+                ObjectType.Element,
                 "Select an element to get its location point"
             )
             element = doc.GetElement(point_ref.ElementId)
@@ -258,7 +286,7 @@ def calculate_elevation_differences(doc, reference_data, reference_type, filtere
         # New geometry-based reference
         is_sloped = False
         ref_elevation = reference_data['point'].Z + base_point_elevation
-        output.print_md("Using geometry reference point at elevation: {:.2f}".format(ref_elevation))
+        #output.print_md("Using geometry reference point at elevation: {:.2f}".format(ref_elevation))
     
     differences = []
     for element in filtered_elements:
