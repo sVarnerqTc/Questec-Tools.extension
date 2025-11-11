@@ -1,0 +1,7 @@
+title: Points From CSV
+tooltip: Import a CSV in the format Point#,X,Y,Z,Comments with a header row (The first row will be omitted)
+author: Stephen Varner
+script: PointsFromCSV.py
+icon: csv_icon.png
+min_revit_ver: 2018
+max_revit_ver: 2025
