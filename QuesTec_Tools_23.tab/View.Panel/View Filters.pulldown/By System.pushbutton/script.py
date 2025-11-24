@@ -299,6 +299,10 @@ def main():
         # Get all system types
         piping_systems, duct_systems = get_system_types()
         
+        # Sort systems by their names
+        piping_systems = sorted(piping_systems, key=lambda x: x['name'])
+        duct_systems = sorted(duct_systems, key=lambda x: x['name'])
+        
         # Get support disciplines
         support_disciplines = get_support_disciplines()
         
@@ -334,8 +338,8 @@ def main():
             if not system['abbreviation'] or system['abbreviation'].strip() == "":
                 continue
                 
-            # Use system type name in filter name
-            filter_name = "Pipe System - " + system['abbreviation'] + " - " + system['name']
+            # Use system type name in filter name (remove abbreviation)
+            filter_name = "Pipe System - " + system['name']
             try:
                 if filter_name in existing_filters:
                     # Use existing filter
@@ -359,8 +363,8 @@ def main():
             if not system['abbreviation'] or system['abbreviation'].strip() == "":
                 continue
                 
-            # Use system type name in filter name
-            filter_name = "Duct System - " + system['abbreviation'] + " - " + system['name']
+            # Use system type name in filter name (remove abbreviation)
+            filter_name = "Duct System - " + system['name']
             try:
                 if filter_name in existing_filters:
                     # Use existing filter
