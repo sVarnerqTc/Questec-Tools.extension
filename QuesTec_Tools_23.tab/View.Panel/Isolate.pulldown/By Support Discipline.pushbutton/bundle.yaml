@@ -1,0 +1,9 @@
+tooltip:
+  en_us: Pre-Select Elements and run to isolate hangers based on support Discipline. Must have already run Apply Hanger Properties.
+title:
+  en_us: >-
+    By Support Discipline
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
