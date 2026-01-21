@@ -344,6 +344,108 @@ def prompt_for_offset():
         forms.alert("Invalid number format. Using 0 as offset.", exitscript=False)
         return 0
 
+def collect_trapeze_hangers(doc, view_id):
+    """Collect all pipe accessories with 'trapeze' in the family name"""
+    output = script.get_output()
+    
+    collector = (DB.FilteredElementCollector(doc, view_id)
+                .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
+                .WhereElementIsNotElementType())
+    
+    all_elements = collector.ToElements()
+    
+    trapeze_hangers = []
+    for elem in all_elements:
+        # Get family name
+        family_name = elem.Symbol.FamilyName if elem.Symbol else ""
+        if "trapeze" in family_name.lower():
+            trapeze_hangers.append(elem)
+    
+    #output.print_md("Found {} trapeze hangers".format(len(trapeze_hangers)))
+    return trapeze_hangers
+
+def set_trapeze_elevations(doc, reference_data, reference_type, trapeze_hangers):
+    """Set BC elevation parameters for trapeze hangers"""
+    output = script.get_output()
+    
+    if not trapeze_hangers:
+        return
+    
+    # Get project base point elevation (same logic as in calculate_elevation_differences)
+    project_location = doc.ActiveProjectLocation
+    project_position = project_location.GetProjectPosition(DB.XYZ.Zero)
+    survey_to_internal_elevation = project_position.Elevation
+    base_point = (DB.FilteredElementCollector(doc)
+             .OfCategory(DB.BuiltInCategory.OST_ProjectBasePoint)
+             .FirstElement())
+    if base_point:
+        survey_to_base_point = base_point.get_Parameter(
+            DB.BuiltInParameter.BASEPOINT_ELEVATION_PARAM).AsDouble()
+    else:
+        survey_to_base_point = 0.0
+        output.print_md("Warning: Could not find Project Base Point")
+    base_point_elevation = survey_to_base_point - survey_to_internal_elevation
+    
+    # Calculate reference elevation
+    if reference_type == 'reference':
+        reference_element = reference_data
+        if isinstance(reference_element, DB.Level):
+            ref_elevation = reference_element.Elevation + base_point_elevation
+            is_sloped = False
+        else:  # Reference Plane
+            bubble_point = reference_element.BubbleEnd
+            free_point = reference_element.FreeEnd
+            is_sloped = True
+            slope_vector = free_point - bubble_point
+    elif reference_type == 'geometry':
+        is_sloped = False
+        ref_elevation = reference_data['point'].Z + base_point_elevation
+    
+    t = DB.Transaction(doc, "Set Trapeze Elevations")
+    t.Start()
+    
+    try:
+        for trapeze in trapeze_hangers:
+            location = trapeze.Location
+            if not location:
+                continue
+                
+            trapeze_point = location.Point
+            
+            # Handle sloped reference planes
+            if reference_type == 'reference' and is_sloped:
+                dx = trapeze_point.X - bubble_point.X
+                dy = trapeze_point.Y - bubble_point.Y
+                slope_run_x = free_point.X - bubble_point.X
+                slope_run_y = free_point.Y - bubble_point.Y
+                total_run = (slope_run_x ** 2 + slope_run_y ** 2) ** 0.5
+                
+                if total_run != 0:
+                    element_run = (dx * slope_run_x + dy * slope_run_y) / total_run
+                    t_param = element_run / total_run
+                    current_ref_elevation = bubble_point.Z + (t_param * slope_vector.Z)
+                else:
+                    current_ref_elevation = bubble_point.Z
+            else:
+                current_ref_elevation = ref_elevation
+            
+            # Calculate the value to set: reference_elevation - trapeze_elevation
+            trapeze_elevation = trapeze_point.Z
+            bc_value = current_ref_elevation - trapeze_elevation
+            
+            # Set the BC parameters
+            for param_name in ['BC 1 Elev', 'BC 2 Elev', 'BC 3 Elev']:
+                param = trapeze.LookupParameter(param_name)
+                if param and not param.IsReadOnly:
+                    param.Set(bc_value)
+        
+        t.Commit()
+        #output.print_md("\nSuccessfully updated {} trapeze hangers".format(len(trapeze_hangers)))
+        
+    except Exception as ex:
+        t.RollBack()
+        #output.print_md("\nError setting trapeze elevations: {}".format(str(ex)))
+
 def set_rod_extensions(doc, differences, filtered_elements):
     """Set Rod Extension values based on elevation differences and offsets"""
     output = script.get_output()
@@ -437,8 +539,12 @@ def main():
         accessories = collect_pipe_accessories(doc, active_view.Id, reference_data, reference_type)
         processed_accessories = process_accessories(doc, accessories)
         
-        # Calculate elevation differences
+        # Calculate elevation differences for single rod hangers
         differences = calculate_elevation_differences(doc, reference_data, reference_type, processed_accessories)
+        
+        # Process trapeze hangers
+        trapeze_hangers = collect_trapeze_hangers(doc, active_view.Id)
+        set_trapeze_elevations(doc, reference_data, reference_type, trapeze_hangers)
         
         # print_results(output, processed_accessories)
         
