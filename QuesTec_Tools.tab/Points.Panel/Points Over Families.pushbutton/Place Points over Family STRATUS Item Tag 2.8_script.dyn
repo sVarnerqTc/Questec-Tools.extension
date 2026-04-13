@@ -91,15 +91,17 @@
     {
       "Id": "13f454acdf5e44a785bb92a86c80c8ec",
       "Name": "Select Family to Place",
-      "Type": "dropdownSelection",
+      "Type": "selection",
+      "Type2": "dropdownSelection",
       "Value": "SSW Layout Point:Control Point",
       "Description": "All family types available in the document.",
-      "SelectedIndex": 590
+      "SelectedIndex": 662
     },
     {
       "Id": "6fdb6ee178ca4cfd93f43fb03e737512",
       "Name": "Layer",
       "Type": "string",
+      "Type2": "string",
       "Value": "0",
       "Description": "Creates a string.",
       "SelectedIndex": 0
@@ -109,15 +111,15 @@
     {
       "Id": "6cfe2375c9e44c3888d4dc90a64aadd1",
       "Name": "Points Placed",
-      "Type": "integer",
-      "InitialValue": "0",
+      "Type": "unknown",
+      "InitialValue": "",
       "Description": "Visualize the node's output"
     },
     {
       "Id": "1ed2913d08804b1195931eb8ce6e5a47",
       "Name": "Note:",
-      "Type": "string",
-      "InitialValue": "Uses current selection as the family to place points over",
+      "Type": "unknown",
+      "InitialValue": "",
       "Description": "Visualize the node's output"
     }
   ],
@@ -476,7 +478,7 @@
     },
     {
       "ConcreteType": "DSRevitNodesUI.FamilyTypes, DSRevitNodesUI",
-      "SelectedIndex": 590,
+      "SelectedIndex": 662,
       "SelectedString": "SSW Layout Point:Control Point",
       "NodeType": "ExtensionNode",
       "Id": "13f454acdf5e44a785bb92a86c80c8ec",
@@ -499,7 +501,8 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nfrom Autodesk.Revit.DB.Structure import *\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\npoints = UnwrapElement(IN[0])\r\nfamtype = UnwrapElement(IN[1])\r\n\r\nelementlist = list()\r\n\r\nST = StructuralType.NonStructural\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n# Make sure the familysymbol is active\r\nif famtype.IsActive == False:\r\n\tfamtype.Activate()\r\n\tdoc.Regenerate()\r\nfor point in points:\r\n\tnewobj = doc.Create.NewFamilyInstance(point.ToXyz(),famtype,ST)\r\n\telementlist.append(newobj)\r\nTransactionManager.Instance.TransactionTaskDone()\r\nOUT = elementlist",
-      "Engine": "IronPython2",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "830aefe866374deb8e0e75199da27342",
       "Inputs": [
@@ -540,7 +543,8 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "#Copyright(c) 2016, Dimitar Venkov\r\n# @5devene, dimitar.ven@gmail.com\r\n\r\nimport clr\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuidoc = DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\ndef output1(l1):\r\n\tif len(l1) == 1: return l1[0]\r\n\telse: return l1\r\n\r\nselid = uidoc.Selection.GetElementIds()\r\nOUT = output1([doc.GetElement(id).ToDSType(True) for id in selid])",
-      "Engine": "IronPython2",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "0deb94dfea6e483c9e239e133b2accf8",
       "Inputs": [
@@ -884,7 +888,8 @@
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "import clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Get the current Revit document\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The input to this node will be stored in the IN variable\r\nfamily_elements = UnwrapElement(IN[0])\r\n\r\n# Initialize a list to store element IDs\r\nelement_ids = []\r\n\r\n# Loop through the family elements and get their IDs\r\nfor element in family_elements:\r\n    if element is not None:\r\n        element_ids.append(element.Id.ToString())\r\n\r\n# Output the list of element IDs\r\nOUT = element_ids",
-      "Engine": "IronPython2",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "10e53e45f73143248f6faf72f45cc7da",
       "Inputs": [
@@ -1108,7 +1113,7 @@
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.13.1.3887",
+      "Version": "2.16.4.10216",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
@@ -1465,7 +1470,7 @@
         "HasNestedGroups": false,
         "Left": 3933.96468413806,
         "Top": 488.82041106018238,
-        "Width": 790.69027422692034,
+        "Width": 796.02360756025428,
         "Height": 273.12276241589103,
         "FontSize": 36.0,
         "InitialTop": 562.15374439351569,
@@ -1487,7 +1492,7 @@
         "Left": 5333.6167957704629,
         "Top": 489.6772045687332,
         "Width": 434.0,
-        "Height": 246.99999999999994,
+        "Height": 234.99999999999994,
         "FontSize": 36.0,
         "InitialTop": 563.01053790206652,
         "InitialHeight": 145.0,
@@ -1507,7 +1512,7 @@
         "HasNestedGroups": false,
         "Left": 6596.2050237648937,
         "Top": 760.03389628149307,
-        "Width": 162.66666666666697,
+        "Width": 168.0,
         "Height": 190.33333333333326,
         "FontSize": 24.0,
         "InitialTop": 818.7005629481597,
@@ -1528,7 +1533,7 @@
         "HasNestedGroups": false,
         "Left": 4854.1941059005449,
         "Top": 695.90468803096587,
-        "Width": 381.33333333333303,
+        "Width": 386.66666666666697,
         "Height": 190.33333333333326,
         "FontSize": 24.0,
         "InitialTop": 754.5713546976325,
@@ -1550,8 +1555,8 @@
         "HasNestedGroups": false,
         "Left": 7189.0306447565472,
         "Top": 479.38578637745007,
-        "Width": 497.04532888927679,
-        "Height": 371.66666666666657,
+        "Width": 502.37866222260982,
+        "Height": 208.99999999999994,
         "FontSize": 36.0,
         "InitialTop": 552.71911971078339,
         "InitialHeight": 145.47873563519818,
@@ -1572,8 +1577,8 @@
         "HasNestedGroups": false,
         "Left": 7181.536402055558,
         "Top": 688.17541814960691,
-        "Width": 858.01098370394175,
-        "Height": 371.66666666666674,
+        "Width": 863.34431703727478,
+        "Height": 209.0,
         "FontSize": 36.0,
         "InitialTop": 761.50875148294028,
         "InitialHeight": 146.5615473874617,
@@ -1581,8 +1586,8 @@
         "Background": "#FF48B9FF"
       }
     ],
-    "X": -3094.5628043521365,
-    "Y": -134.48360844661516,
-    "Zoom": 0.64232977637687139
+    "X": -1498.5402358854949,
+    "Y": 127.51778121848486,
+    "Zoom": 0.41575331295168594
   }
 }

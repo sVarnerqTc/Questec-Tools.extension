@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Parses a SysQue palette XML file and exports referenced family entries to an Excel file.
+
+title:
+  en_us: >-
+    Export SysQue
+    XML Families
+authors:
+  - 'SVarner'
+min_revit_version: 2022

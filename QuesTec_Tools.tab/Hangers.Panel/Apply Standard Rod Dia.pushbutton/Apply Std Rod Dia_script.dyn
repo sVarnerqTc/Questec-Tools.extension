@@ -24,8 +24,8 @@
   "Nodes": [
     {
       "ConcreteType": "DSRevitNodesUI.ElementsOfCategoryInView, DSRevitNodesUI",
-      "Id": "2446d440518b46078f0a93e20d9b03bc",
       "NodeType": "ExtensionNode",
+      "Id": "2446d440518b46078f0a93e20d9b03bc",
       "Inputs": [
         {
           "Id": "df454cf32b944cbebd94d1235765d461",
@@ -62,8 +62,9 @@
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "Id": "09a83da66a0242e4bed73d8129674b71",
       "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Application.Document.ActiveView",
+      "Id": "09a83da66a0242e4bed73d8129674b71",
       "Inputs": [
         {
           "Id": "baa3ecadde34446bad7b94acc339af7e",
@@ -86,14 +87,14 @@
           "KeepListStructure": false
         }
       ],
-      "FunctionSignature": "Revit.Application.Document.ActiveView",
       "Replication": "Auto",
       "Description": "Get the active view for the document\n\nDocument.ActiveView: View"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "Id": "a4b106d4a9764dccb04ce658e65b025f",
       "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Application.Document.Current",
+      "Id": "a4b106d4a9764dccb04ce658e65b025f",
       "Inputs": [],
       "Outputs": [
         {
@@ -106,16 +107,15 @@
           "KeepListStructure": false
         }
       ],
-      "FunctionSignature": "Revit.Application.Document.Current",
       "Replication": "Auto",
       "Description": "Get the current document\n\nDocument.Current: Document"
     },
     {
       "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
-      "SelectedIndex": 411,
+      "SelectedIndex": 404,
       "SelectedString": "OST_PipeAccessory",
-      "Id": "ba245a241dc34190be3cdac17215d6af",
       "NodeType": "ExtensionNode",
+      "Id": "ba245a241dc34190be3cdac17215d6af",
       "Inputs": [],
       "Outputs": [
         {
@@ -133,8 +133,9 @@
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "Id": "e82ed5c814794a1dab0ce845da042881",
       "NodeType": "CodeBlockNode",
+      "Code": "\"QTC Pipe Size\";",
+      "Id": "e82ed5c814794a1dab0ce845da042881",
       "Inputs": [],
       "Outputs": [
         {
@@ -148,13 +149,13 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly",
-      "Code": "\"QTC Pipe Size\";"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "Id": "6a8c0569e2db4ac7a82cd86a0ca86e09",
       "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "6a8c0569e2db4ac7a82cd86a0ca86e09",
       "Inputs": [
         {
           "Id": "e30c064c7ff34d1f9436f4aad8f50351",
@@ -186,18 +187,18 @@
           "KeepListStructure": false
         }
       ],
-      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
       "Replication": "Auto",
       "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "Id": "aa2e44b5633747d1ab88aa90d91f5566",
       "NodeType": "CodeBlockNode",
+      "Code": "0.375;\n4.9;\n0.5;\n9.9;\n0.625;\n11.9;\n0.75;",
+      "Id": "aa2e44b5633747d1ab88aa90d91f5566",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "dd01471d72af4d6b888c6aeb4d4e580e",
+          "Id": "c1ae00614bce4d93b4dde9177c319dcb",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -206,7 +207,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "f76674f1170945fdb32fd9d1d7d3443b",
+          "Id": "92df985350e04c53aa1be528f39c6efa",
           "Name": "",
           "Description": "Value of expression at line 2",
           "UsingDefaultValue": false,
@@ -215,7 +216,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "f3adeec71b7f4a33abd7cf42b89ad845",
+          "Id": "98be160f64e84959bbc894f753b0cef3",
           "Name": "",
           "Description": "Value of expression at line 3",
           "UsingDefaultValue": false,
@@ -224,7 +225,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "401789b5048749aba1a1d3cb68aa81bb",
+          "Id": "74fe6898b72d46e5bd1ca5fb6871d0c1",
           "Name": "",
           "Description": "Value of expression at line 4",
           "UsingDefaultValue": false,
@@ -233,7 +234,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "11c5f35774f740c2b496379df24ac5c1",
+          "Id": "3414f589545e4a99858a3d509cff49cf",
           "Name": "",
           "Description": "Value of expression at line 5",
           "UsingDefaultValue": false,
@@ -242,7 +243,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "02c9d1760d3a4ad7ab90535a72e62cb6",
+          "Id": "8aa10538638e4b60a74766a6dc891832",
           "Name": "",
           "Description": "Value of expression at line 6",
           "UsingDefaultValue": false,
@@ -251,7 +252,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "df1c0d64d1cd4df1a01484e4a881f4ed",
+          "Id": "6bd48bfad713494b82e150610cc9738a",
           "Name": "",
           "Description": "Value of expression at line 7",
           "UsingDefaultValue": false,
@@ -261,13 +262,13 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly",
-      "Code": "0.375;\n5;\n0.5;\n10;\n0.625;\n12;\n0.75;"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "Id": "41e91bd70acc41debdf7b5273bd7d56c",
       "NodeType": "CodeBlockNode",
+      "Code": "inches=ft*12;",
+      "Id": "41e91bd70acc41debdf7b5273bd7d56c",
       "Inputs": [
         {
           "Id": "57a5606c79d846c0a973bb7a60c531ec",
@@ -291,13 +292,13 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly",
-      "Code": "inches=ft*12;"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "Id": "1b291e39135544e4b6975fa35b1d607e",
       "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.SetParameterByName@string,var",
+      "Id": "1b291e39135544e4b6975fa35b1d607e",
       "Inputs": [
         {
           "Id": "8ff7cedb9cdb48209b2fda0b007f642d",
@@ -338,14 +339,14 @@
           "KeepListStructure": false
         }
       ],
-      "FunctionSignature": "Revit.Elements.Element.SetParameterByName@string,var",
       "Replication": "Auto",
       "Description": "Set one of the element's parameters.\n\nElement.SetParameterByName (parameterName: string, value: var): Element"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "Id": "34d03ad041364991b825935a1cd8850a",
       "NodeType": "CodeBlockNode",
+      "Code": "\"Rod Diameter\";",
+      "Id": "34d03ad041364991b825935a1cd8850a",
       "Inputs": [],
       "Outputs": [
         {
@@ -359,17 +360,16 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly",
-      "Code": "\"Rod Diameter\";"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
       "Code": "# Import necessary libraries\r\nimport clr\r\nclr.AddReference('System.Windows.Forms')\r\nclr.AddReference('System.Drawing')\r\nfrom System.Windows.Forms import MessageBox, MessageBoxButtons, MessageBoxIcon, Form, Button, Label, DialogResult\r\nfrom System.Drawing import Point, Size\r\n\r\n# Define the input variables\r\nsize = IN[0]  # List of pipe sizes\r\nrodsize1 = IN[1]\r\npipesize2 = IN[2]\r\nrodsize2 = IN[3]\r\npipesize3 = IN[4]\r\nrodsize3 = IN[5]\r\npipesize4 = IN[6]\r\nrodsize4 = IN[7]\r\n\r\n# Initialize lists to store output rod sizes and elements outside the range\r\noutput_rod_sizes = []\r\noutside_range_elements = []\r\n\r\n# Iterate through each pipe size and corresponding element\r\nfor s in size:\r\n    if s < pipesize2:\r\n        output_rod_sizes.append(rodsize1)\r\n    elif pipesize2 <= s < pipesize3:\r\n        output_rod_sizes.append(rodsize2)\r\n    elif pipesize3 <= s < pipesize4:\r\n        output_rod_sizes.append(rodsize3)\r\n    elif pipesize4 <= s <= 20:\r\n        output_rod_sizes.append(rodsize4)\r\n    else:\r\n        # Explicitly check for sizes <= 0 or > 20\r\n        if s <= 0 or s > 20:\r\n            outside_range_elements.append(element)\r\n\r\n# Count the number of hangers outside the range\r\noutside_range_count = len(outside_range_elements)\r\n\r\n# Only show popups if there are hangers outside the range\r\nif outside_range_count > 0:\r\n    # Create the popup message\r\n    popup_message = f\"{outside_range_count} Hangers have QTC Pipe Size that is  greater than 20\"\r\n    popup_title = \"Hangers Outside Acceptable Range\"\r\n    popup_buttons = MessageBoxButtons.OK\r\n    popup_icon = MessageBoxIcon.Warning\r\n\r\n    # Show the popup\r\n    MessageBox.Show(popup_message, popup_title, popup_buttons, popup_icon)\r\n\r\n# Output the rod sizes\r\nOUT = output_rod_sizes",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "23f1cf12fae54ea9bbda6edb7e258992",
-      "NodeType": "PythonScriptNode",
       "Inputs": [
         {
           "Id": "a1564395aa17447484d19340ab7c1f00",
@@ -460,12 +460,12 @@
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
       "Code": "# Import necessary libraries\r\nimport clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Get the current Revit document\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Define the input list of pipe accessory elements\r\npipe_accessories = UnwrapElement(IN[0])  # Unwrap Dynamo elements to Revit elements\r\n\r\n# Initialize a list to store elements with the \"QTC Pipe Size\" parameter\r\nelements_with_qtc_pipe_size = []\r\n\r\n# Iterate through each pipe accessory element\r\nfor element in pipe_accessories:\r\n    # Check if the element has the \"QTC Pipe Size\" parameter\r\n    param = element.LookupParameter(\"QTC Pipe Size\")\r\n    if param is not None:\r\n        elements_with_qtc_pipe_size.append(element)\r\n\r\n# Output the filtered list of elements\r\nOUT = elements_with_qtc_pipe_size",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
       "Id": "8951bfc90c094529aa1c8a026fe66ef5",
-      "NodeType": "PythonScriptNode",
       "Inputs": [
         {
           "Id": "2ed138c1e524402ea2b7755d3fdd808a",
@@ -530,45 +530,45 @@
       "IsHidden": "False"
     },
     {
-      "Start": "dd01471d72af4d6b888c6aeb4d4e580e",
+      "Start": "c1ae00614bce4d93b4dde9177c319dcb",
       "End": "7a6ce51f62f54d43b7e21fe260ce0e94",
-      "Id": "dbd9c273977241d6bad41e0f0d93b4e9",
+      "Id": "9f360633c7dd41ac960c96b23949082d",
       "IsHidden": "False"
     },
     {
-      "Start": "f76674f1170945fdb32fd9d1d7d3443b",
+      "Start": "92df985350e04c53aa1be528f39c6efa",
       "End": "567baf7421ad4178b0487f5b3249dac8",
-      "Id": "884206a0956840de89b4471655ea0819",
+      "Id": "f45c2ea40aac40cb88dea74a371188e2",
       "IsHidden": "False"
     },
     {
-      "Start": "f3adeec71b7f4a33abd7cf42b89ad845",
+      "Start": "98be160f64e84959bbc894f753b0cef3",
       "End": "b21b04e1095c4a55b32ffc7af3f31e98",
-      "Id": "9eb11a5dff0341cd8ec8f565f616b447",
+      "Id": "579d618a55784a159aaace520b0c7570",
       "IsHidden": "False"
     },
     {
-      "Start": "401789b5048749aba1a1d3cb68aa81bb",
+      "Start": "74fe6898b72d46e5bd1ca5fb6871d0c1",
       "End": "244682fc26c3450884cce651fff40c9a",
-      "Id": "83e6ff17d6a2468b8a03ffd44db5c755",
+      "Id": "9cbc7a3e825c4e59b5a37a1adb76a9cf",
       "IsHidden": "False"
     },
     {
-      "Start": "11c5f35774f740c2b496379df24ac5c1",
+      "Start": "3414f589545e4a99858a3d509cff49cf",
       "End": "c6a3d8e6131d4e9d91132d9ea2461543",
-      "Id": "554af1f3c0ce46b48a2a8efebdc327af",
+      "Id": "6af45f77b7b94920897ca1fc88e61f61",
       "IsHidden": "False"
     },
     {
-      "Start": "02c9d1760d3a4ad7ab90535a72e62cb6",
+      "Start": "8aa10538638e4b60a74766a6dc891832",
       "End": "23855f537d02431c940a779c1378cbd3",
-      "Id": "fc59a1cdf6f74484926d146e4862961b",
+      "Id": "4f9651e9155e41269f3c2912b04ed0c9",
       "IsHidden": "False"
     },
     {
-      "Start": "df1c0d64d1cd4df1a01484e4a881f4ed",
+      "Start": "6bd48bfad713494b82e150610cc9738a",
       "End": "13ca1dd042a6400d800307436519caa0",
-      "Id": "b27f4cf438c646d49a5586fa2133cd6d",
+      "Id": "0a4c0eed71a443bfbbaa2c05ac16c812",
       "IsHidden": "False"
     },
     {
@@ -633,12 +633,12 @@
       "ScaleFactor": 1.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.19.3.6394",
+      "Version": "2.16.4.10216",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
     "Camera": {
-      "Name": "_Background Preview",
+      "Name": "Background Preview",
       "EyeX": -17.0,
       "EyeY": 24.0,
       "EyeZ": 50.0,
@@ -652,129 +652,129 @@
     "ConnectorPins": [],
     "NodeViews": [
       {
-        "Id": "2446d440518b46078f0a93e20d9b03bc",
         "Name": "All Elements of Category in View",
+        "ShowGeometry": true,
+        "Id": "2446d440518b46078f0a93e20d9b03bc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 1373.2856192052309,
         "Y": 412.59129247815292
       },
       {
-        "Id": "09a83da66a0242e4bed73d8129674b71",
         "Name": "Document.ActiveView",
+        "ShowGeometry": true,
+        "Id": "09a83da66a0242e4bed73d8129674b71",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 1058.2856192052309,
         "Y": 482.59129247815292
       },
       {
-        "Id": "a4b106d4a9764dccb04ce658e65b025f",
         "Name": "Document.Current",
+        "ShowGeometry": true,
+        "Id": "a4b106d4a9764dccb04ce658e65b025f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 788.22616296238925,
         "Y": 483.24318679807294
       },
       {
-        "Id": "ba245a241dc34190be3cdac17215d6af",
         "Name": "Categories",
+        "ShowGeometry": true,
+        "Id": "ba245a241dc34190be3cdac17215d6af",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 1053.4062554526718,
         "Y": 341.0622228004579
       },
       {
-        "Id": "e82ed5c814794a1dab0ce845da042881",
         "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "e82ed5c814794a1dab0ce845da042881",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 1949.562223780913,
         "Y": 621.613753539428
       },
       {
-        "Id": "6a8c0569e2db4ac7a82cd86a0ca86e09",
         "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
+        "Id": "6a8c0569e2db4ac7a82cd86a0ca86e09",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 2273.319400318006,
         "Y": 586.933449780459
       },
       {
-        "Id": "aa2e44b5633747d1ab88aa90d91f5566",
         "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "aa2e44b5633747d1ab88aa90d91f5566",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 2777.7257856491019,
         "Y": 758.21344609458379
       },
       {
-        "Id": "41e91bd70acc41debdf7b5273bd7d56c",
         "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "41e91bd70acc41debdf7b5273bd7d56c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 2678.2426982647235,
         "Y": 587.4136413694373
       },
       {
-        "Id": "1b291e39135544e4b6975fa35b1d607e",
         "Name": "Element.SetParameterByName",
+        "ShowGeometry": true,
+        "Id": "1b291e39135544e4b6975fa35b1d607e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 3730.0658616743522,
         "Y": 406.69914682369296
       },
       {
-        "Id": "34d03ad041364991b825935a1cd8850a",
         "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "34d03ad041364991b825935a1cd8850a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 3306.7184948884264,
         "Y": 476.67035648805216
       },
       {
-        "Id": "23f1cf12fae54ea9bbda6edb7e258992",
         "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "23f1cf12fae54ea9bbda6edb7e258992",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 3043.71631693726,
         "Y": 676.22204688225827
       },
       {
-        "Id": "8951bfc90c094529aa1c8a026fe66ef5",
         "Name": "Check for QTC Pipe Size Parameter",
+        "ShowGeometry": true,
+        "Id": "8951bfc90c094529aa1c8a026fe66ef5",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "ShowGeometry": true,
         "X": 1753.6042521704971,
         "Y": 413.70611337307633
       }
     ],
     "Annotations": [],
-    "X": -1890.7193087089936,
-    "Y": -97.1317337503283,
-    "Zoom": 0.85595644091250733
+    "X": -1793.1064406518985,
+    "Y": -211.27218581087766,
+    "Zoom": 0.81619888038647426
   }
 }

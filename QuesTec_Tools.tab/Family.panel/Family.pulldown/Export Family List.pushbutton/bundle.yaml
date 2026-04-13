@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Scans a selected directory for all .rfa family files and exports a structured Excel file listing them by subfolder path and family name.
+
+title:
+  en_us: >-
+    Export Family
+    List
+authors:
+  - 'SVarner'
+min_revit_version: 2022

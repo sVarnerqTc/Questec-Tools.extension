@@ -1,0 +1,10 @@
+title:
+  en_us: >-
+    Grid Bubble
+
+    Sides
+tooltip:
+  en_us: Set selected grid bubbles by Left/Right/Top/Bottom in active view.
+authors:
+  - SVarner
+min_revit_version: 2022
