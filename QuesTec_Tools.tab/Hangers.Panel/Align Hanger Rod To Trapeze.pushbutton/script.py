@@ -35,7 +35,8 @@ def get_trapeze_reference():
     
     for acc in accessories:
         type_elem = doc.GetElement(acc.GetTypeId())
-        if type_elem and "trapeze" in type_elem.FamilyName.lower():
+        family_name = type_elem.FamilyName.lower() if (type_elem and type_elem.FamilyName) else ""
+        if "trapeze" in family_name or "unistrut_spanner" in family_name:
             location = acc.Location
             if location:
                 trapezes.append(acc)

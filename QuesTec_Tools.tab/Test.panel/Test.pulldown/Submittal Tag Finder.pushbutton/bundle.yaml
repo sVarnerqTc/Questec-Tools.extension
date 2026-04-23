@@ -1,0 +1,10 @@
+title:
+  en_us: >-
+    Submittal
+
+    Tag Finder
+tooltip:
+  en_us: Read tags from Excel, scan submittal files for matches, and write filenames + links back to the sheet.
+authors:
+  - QuesTec BIM
+min_revit_version: 2022
