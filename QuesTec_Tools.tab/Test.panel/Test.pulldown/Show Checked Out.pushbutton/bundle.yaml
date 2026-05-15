@@ -1,0 +1,10 @@
+title:
+  en_us: >-
+    Show
+
+    Checked Out
+tooltip:
+  en_us: In active view, list users who own checked out elements and temporarily isolate selected owners
+authors:
+  - SVarner
+min_revit_version: 2022

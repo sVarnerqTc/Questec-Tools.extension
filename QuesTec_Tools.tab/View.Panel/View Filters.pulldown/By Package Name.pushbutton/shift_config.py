@@ -1,6 +1,6 @@
 """
 pyRevit shift-click script to remove all package view filters
-created by the main script by package name and restore filter visibility.
+created by the main script (without deleting them from the project).
 """
 
 import clr
@@ -14,11 +14,11 @@ from Autodesk.Revit.UI import *
 doc = __revit__.ActiveUIDocument.Document
 active_view = doc.ActiveView
 
-def remove_system_type_filters():
-    """Remove all system type view filters from the active view and document"""
+def remove_package_filters():
+    """Remove all package view filters from the active view (but keep them in the project)"""
     
     # Start transaction
-    transaction = Transaction(doc, "Remove System Type View Filters")
+    transaction = Transaction(doc, "Remove Package View Filters")
     transaction.Start()
     
     try:
@@ -32,17 +32,17 @@ def remove_system_type_filters():
         for filter_element in all_filters:
             filter_name = filter_element.Name
             
-            # Check if filter name starts with our naming conventions
-            if (filter_name.startswith("Package_") ):
+            # Check if filter name starts with our naming convention
+            if filter_name.startswith("Package_"):
                 filters_to_remove.append(filter_element)
         
-        # Remove filters from active view first, then delete from document
+        # Remove filters from active view only (do not delete from document)
         for filter_element in filters_to_remove:
             try:
                 filter_name = filter_element.Name
                 filter_id = filter_element.Id
                 
-                # Remove filter from active view first
+                # Remove filter from active view
                 try:
                     active_view.RemoveFilter(filter_id)
                     print("Removed filter from view: " + filter_name)
@@ -55,7 +55,7 @@ def remove_system_type_filters():
         # Commit transaction
         transaction.Commit()
         
-        print("\nSUMMARY: Removed " + str(len(filters_to_remove)) + " system filters from view and document")
+        print("\nSUMMARY: Removed " + str(len(filters_to_remove)) + " package filters from view (filters remain in project)")
         
     except Exception as e:
         transaction.RollBack()
@@ -64,4 +64,4 @@ def remove_system_type_filters():
 
 # Run the script
 if __name__ == "__main__":
-    remove_system_type_filters()
+    remove_package_filters()

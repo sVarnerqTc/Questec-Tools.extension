@@ -3,30 +3,41 @@
 from pyrevit import forms, script
 
 
+OPT_MECH = "Include Mechanical Equipment (all types)"
+OPT_HANGERS = "Include Hangers"
+
+
 def main():
-    options = [
-        "Show Mechanical Equipment",
-        "Hide Mechanical Equipment",
-    ]
+    config = script.get_config()
+    current_mech = getattr(config, "include_mechanical_equipment", True)
+    current_hangers = getattr(config, "include_hangers", True)
 
-    current_value = getattr(script.get_config(), "include_mechanical_equipment", True)
-    current_label = "Show Mechanical Equipment" if current_value else "Hide Mechanical Equipment"
+    all_options = [OPT_MECH, OPT_HANGERS]
+    preselected = [o for o, enabled in [(OPT_MECH, current_mech), (OPT_HANGERS, current_hangers)] if enabled]
 
-    choice = forms.CommandSwitchWindow.show(
-        options,
-        message="When isolating by system, what should happen to mechanical equipment?\nCurrent: {0}".format(current_label)
+    result = forms.SelectFromList.show(
+        all_options,
+        title="By System Settings",
+        button_name="Save",
+        multiselect=True,
+        filterfunc=None,
+        resetfunc=None,
+        default=preselected,
+        info_panel="Select which additional elements to include when isolating by system."
     )
 
-    if not choice:
+    if result is None:
         script.exit()
 
-    config = script.get_config()
-    config.include_mechanical_equipment = (choice == "Show Mechanical Equipment")
+    config.include_mechanical_equipment = OPT_MECH in result
+    config.include_hangers = OPT_HANGERS in result
     script.save_config()
 
+    mech_state = "ON" if config.include_mechanical_equipment else "OFF"
+    hanger_state = "ON" if config.include_hangers else "OFF"
     forms.alert(
-        "Saved setting: {0}".format(choice),
-        title="By System Shift Config"
+        "Include Mechanical Equipment: {0}\nInclude Hangers: {1}".format(mech_state, hanger_state),
+        title="By System Settings"
     )
 
 

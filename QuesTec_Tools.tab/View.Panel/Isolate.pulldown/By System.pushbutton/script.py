@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import clr
+clr.AddReference("RevitAPI")
+from Autodesk.Revit.DB.Plumbing import PipingSystemType
 from pyrevit import forms, revit, DB, script
 from Autodesk.Revit.UI.Selection import ObjectType
 from Autodesk.Revit.Exceptions import OperationCanceledException
@@ -63,20 +66,76 @@ def _get_selected_or_picked_elements():
         return []
 
 
-def _collect_matching_elements(system_types, include_mech_equipment):
-    categories = [
+def _get_system_abbreviations(system_types):
+    """Return a set of abbreviations for the given system type names."""
+    abbreviations = set()
+    system_type_collector = (
+        DB.FilteredElementCollector(doc)
+        .OfClass(PipingSystemType)
+        .ToElements()
+    )
+    for st in system_type_collector:
+        try:
+            name_param = st.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+            st_name = (name_param.AsString() if (name_param and name_param.HasValue) else None) or st.Name
+        except Exception:
+            continue
+        if st_name in system_types:
+            abbrev_param = st.LookupParameter("Abbreviation")
+            if abbrev_param and abbrev_param.HasValue:
+                value = abbrev_param.AsString() or abbrev_param.AsValueString()
+                if value and value.strip():
+                    abbreviations.add(value.strip())
+    return abbreviations
+
+
+def _collect_hangers(system_abbreviations):
+    """Collect pipe accessories that have a BOP parameter and whose
+    Support Discipline parameter contains one of the system abbreviations."""
+    element_ids = []
+    seen = set()
+
+    collector = (
+        DB.FilteredElementCollector(doc, active_view.Id)
+        .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
+        .WhereElementIsNotElementType()
+        .ToElements()
+    )
+
+    for element in collector:
+        bop_param = element.LookupParameter("BOP")
+        if not bop_param:
+            continue
+
+        discipline_param = element.LookupParameter("Support Discipline")
+        if not discipline_param or not discipline_param.HasValue:
+            continue
+
+        discipline_value = discipline_param.AsString() or discipline_param.AsValueString() or ""
+        discipline_value = discipline_value.strip()
+
+        for abbrev in system_abbreviations:
+            if abbrev and discipline_value == abbrev:
+                int_id = element.Id.IntegerValue
+                if int_id not in seen:
+                    seen.add(int_id)
+                    element_ids.append(element.Id)
+                break
+
+    return element_ids
+
+
+def _collect_matching_elements(system_types, include_mech_equipment, include_hangers):
+    pipe_categories = [
         DB.BuiltInCategory.OST_PipeCurves,
         DB.BuiltInCategory.OST_PipeAccessory,
         DB.BuiltInCategory.OST_PipeFitting,
     ]
 
-    if include_mech_equipment:
-        categories.append(DB.BuiltInCategory.OST_MechanicalEquipment)
-
     element_ids = []
     seen = set()
 
-    for category in categories:
+    for category in pipe_categories:
         collector = (
             DB.FilteredElementCollector(doc, active_view.Id)
             .OfCategory(category)
@@ -92,12 +151,48 @@ def _collect_matching_elements(system_types, include_mech_equipment):
                     seen.add(int_id)
                     element_ids.append(element.Id)
 
+    if include_mech_equipment:
+        mech_collector = (
+            DB.FilteredElementCollector(doc, active_view.Id)
+            .OfCategory(DB.BuiltInCategory.OST_MechanicalEquipment)
+            .WhereElementIsNotElementType()
+            .ToElements()
+        )
+        for element in mech_collector:
+            int_id = element.Id.IntegerValue
+            if int_id not in seen:
+                seen.add(int_id)
+                element_ids.append(element.Id)
+
+    if include_hangers:
+        system_abbreviations = _get_system_abbreviations(system_types)
+        hanger_ids = _collect_hangers(system_abbreviations)
+        for eid in hanger_ids:
+            int_id = eid.IntegerValue
+            if int_id not in seen:
+                seen.add(int_id)
+                element_ids.append(eid)
+
+    # Always include section box elements so they are not hidden by isolation
+    section_box_collector = (
+        DB.FilteredElementCollector(doc, active_view.Id)
+        .OfCategory(DB.BuiltInCategory.OST_SectionBox)
+        .WhereElementIsNotElementType()
+        .ToElements()
+    )
+    for element in section_box_collector:
+        int_id = element.Id.IntegerValue
+        if int_id not in seen:
+            seen.add(int_id)
+            element_ids.append(element.Id)
+
     return element_ids
 
 
 def main():
     config = script.get_config()
     include_mech_equipment = getattr(config, "include_mechanical_equipment", True)
+    include_hangers = getattr(config, "include_hangers", True)
 
     seed_elements = _get_selected_or_picked_elements()
     if not seed_elements:
@@ -118,7 +213,8 @@ def main():
 
     matching_ids = _collect_matching_elements(
         selected_system_types,
-        include_mech_equipment
+        include_mech_equipment,
+        include_hangers
     )
 
     if not matching_ids:
@@ -130,17 +226,6 @@ def main():
 
     with revit.Transaction("Temporary Isolate By System"):
         active_view.IsolateElementsTemporary(List[DB.ElementId](matching_ids))
-
-    action_text = "included" if include_mech_equipment else "hidden"
-    print(
-        "Isolated {0} element(s) in view '{1}' using system type(s): {2}. "
-        "Mechanical equipment is {3} by Shift config.".format(
-            len(matching_ids),
-            active_view.Name,
-            ", ".join(sorted(selected_system_types)),
-            action_text
-        )
-    )
 
 
 if __name__ == "__main__":
