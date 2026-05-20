@@ -1,0 +1,13 @@
+tooltip:
+  en_us: Find visible grid intersections and place 4 offset control points (+ or x style)
+
+title:
+  en_us: >-
+    Create Offset
+  
+    points
+authors:
+  - 'SVarner'
+icon: icon.png
+help_url:
+min_revit_version: 2022
