@@ -118,7 +118,7 @@ for hanger in hangers:
     if not conflicting_pipes:
         hangers_no_pipes.append(hanger)
     elif len(conflicting_pipes) == 1:
-        hangers_with_pipes.append((hanger, conflicting_pipes[0]))
+        hangers_with_pipes.append((hanger, conflicting_pipes[0], False))
     else:
         # Check if all conflicting pipes have same properties
         first_pipe = conflicting_pipes[0]
@@ -132,7 +132,7 @@ for hanger in hangers:
                 break
         
         if all_same:
-            hangers_with_pipes.append((hanger, first_pipe))
+            hangers_with_pipes.append((hanger, first_pipe, True))
         else:
             hangers_multiple_systems.append((hanger, conflicting_pipes))
 
@@ -142,12 +142,16 @@ def set_parameter_safely(element, param_name, value):
         param.Set(value)
     else:
         print("Warning: Parameter '{}' not found on element {}".format(param_name, element.Id))
-        element.LookupParameter('QTC Error').Set("Parameter {} not found".format(param_name))  # Fixed quotes
+        error_param = element.LookupParameter('QTC Error')
+        if error_param:
+            error_param.Set("Parameter {} not found".format(param_name))
+        else:
+            print("Warning: Parameter 'QTC Error' not found on element {}".format(element.Id))
 
 # Modify the transaction section
 with revit.Transaction('Update Hanger Parameters'):
     # First handle successful matches
-    for hanger, pipe in hangers_with_pipes:
+    for hanger, pipe, multiple_same_systems in hangers_with_pipes:
         # Get hanger XY location
         hanger_location = hanger.Location.Point
         
@@ -161,9 +165,8 @@ with revit.Transaction('Update Hanger Parameters'):
         set_parameter_safely(hanger, 'QTC Insulation Thickness', pipe_data['insulation_thickness'])
         set_parameter_safely(hanger, 'QTC Pipe ID', pipe_data['pipe_id'])
         set_parameter_safely(hanger, 'Support Discipline', pipe_data['system_abbr'])
-        
-        # Add error message if this was from multiple same-system pipes
-        if len(conflicting_pipes) > 1:
+
+        if multiple_same_systems:
             set_parameter_safely(hanger, 'QTC Error', 'Multiple pipes same system')
 
     # Handle hangers with no pipes

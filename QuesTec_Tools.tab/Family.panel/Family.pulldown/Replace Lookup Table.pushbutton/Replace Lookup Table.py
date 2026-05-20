@@ -47,7 +47,7 @@ def prompt_for_family_instance():
     selected_element = revit.pick_element(message="Select a family instance in the active view")
     if selected_element and isinstance(selected_element, FamilyInstance):
         return selected_element.Symbol.Family
-    return None\
+    return None
 
 def get_selected_families(uidoc):
     """Get all selected family instances"""
@@ -103,25 +103,42 @@ try:
     filename = os.path.basename(csv_path)
     table_name = get_table_name_from_file(filename, family.Name)
     
-    # Create size table manager
-    size_table_mgr = FamilySizeTableManager.GetFamilySizeTableManager(doc, family.Id)
+    # Open family document for editing
+    family_doc = doc.EditFamily(family)
     
-    if not size_table_mgr:
-        print("Could not get size table manager")
+    if not family_doc:
+        print("Could not open family document: {}".format(family.Name))
         script.exit()
+    
+    try:
+        # Create size table manager within family document context
+        size_table_mgr = FamilySizeTableManager.GetFamilySizeTableManager(family_doc, family.Id)
         
-    # Create error info object for import
-    from System import String
-    error_info = clr.Reference[String]()
-    
-    # Import the size table
-    success = size_table_mgr.ImportSizeTable(table_name, csv_path, error_info)
-    
-    if not success:
-        print("Failed to import table: {}".format(error_info.Value))
+        if not size_table_mgr:
+            print("Could not get size table manager")
+            script.exit()
+            
+        # Create error info object for import
+        from System import String
+        error_info = clr.Reference[String]()
+        
+        # Import the size table
+        success = size_table_mgr.ImportSizeTable(table_name, csv_path, error_info)
+        
+        if not success:
+            print("Failed to import table: {}".format(error_info.Value))
+            family_doc.Close(False)
+            script.exit()
+            
+        print("Successfully imported table: {}".format(table_name))
+        
+        # Close and save the family document
+        family_doc.Close(True)
+        
+    except Exception as e:
+        print("Error during import: {}".format(str(e)))
+        family_doc.Close(False)
         script.exit()
-        
-    print("Successfully imported table: {}".format(table_name))
 
 except Exception as e:
     print("Error: {}".format(str(e)))
