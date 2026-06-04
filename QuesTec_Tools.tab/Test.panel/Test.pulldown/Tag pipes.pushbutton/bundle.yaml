@@ -1,0 +1,8 @@
+title:
+  en_us: >-
+    Tag pipes
+tooltip:
+  en_us: Tags one representative pipe per line, system, and size in the active view. Shift+Click to choose pipe tag type.
+authors:
+  - SVarner
+min_revit_version: 2022

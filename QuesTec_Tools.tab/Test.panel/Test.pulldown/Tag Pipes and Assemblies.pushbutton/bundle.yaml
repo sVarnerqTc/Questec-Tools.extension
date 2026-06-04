@@ -1,0 +1,10 @@
+title:
+  en_us: >-
+    Tag Pipes
+
+    and Assemblies
+tooltip:
+  en_us: Tags one representative element per spool tag. Shift+Click to choose pipe and multi-category tag types.
+authors:
+  - SVarner
+min_revit_version: 2022

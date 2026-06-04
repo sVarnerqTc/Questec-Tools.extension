@@ -65,9 +65,10 @@ def get_selected_families(uidoc):
 
 def select_folder():
     """Prompt user to select a folder for saving files"""
-    default_path = os.path.expanduser("~\\Desktop")
-    selected_folder = forms.pick_folder(title="Select Folder to Save Lookup Tables", 
-                                        default=default_path)
+    selected_folder = forms.pick_folder(title="Select Folder to Save Lookup Tables")
+    if not selected_folder:
+        # Fallback to Desktop when user closes or cancels the picker.
+        selected_folder = os.path.expanduser("~\\Desktop")
     return selected_folder
 
 # Get current document and UI application
