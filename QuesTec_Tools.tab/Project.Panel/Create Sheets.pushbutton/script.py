@@ -32,13 +32,14 @@ try:
 
     # Create selection options for scope boxes
     scope_box_options = {sb.Name: sb for sb in scope_boxes if sb.Name}
+    sorted_scope_box_names = sorted(scope_box_options.keys())
 
     if not scope_box_options:
         forms.alert("No named scope boxes found in the project.", exitscript=True)
 
     # Let user select scope boxes
     selected_scope_boxes = forms.SelectFromList.show(
-        scope_box_options.keys(),
+        sorted_scope_box_names,
         title="Select Scope Boxes",
         multiselect=True,
         button_name="Select"
@@ -71,73 +72,86 @@ try:
 
     selected_title_block = title_block_options[selected_title_block_name]
 
-    # Start transaction
-    t = DB.Transaction(doc, "Create Sheets from Scope Boxes")
-    t.Start()
-    
-    try:
-        created_sheets = []
-        
-        for scope_box_name in selected_scope_boxes:
-            try:
-                scope_box = scope_box_options[scope_box_name]
-                
-                # Create dependent view
-                dependent_view_id = active_view.Duplicate(DB.ViewDuplicateOption.AsDependent)
-                dependent_view = doc.GetElement(dependent_view_id)
-                
-                # Rename dependent view
-                new_view_name = "{} - {}".format(active_view.Name, scope_box_name)
-                dependent_view.Name = new_view_name
-                
-                # Set crop box to scope box
-                dependent_view.get_Parameter(DB.BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP).Set(scope_box.Id)
-                
-                # Create sheet number and name
-                sheet_number = "{}.{}".format(base_sheet_name, scope_box_name)
-                sheet_name = new_view_name
-                
-                # Create new sheet
-                new_sheet = DB.ViewSheet.Create(doc, selected_title_block.Id)
-                new_sheet.SheetNumber = sheet_number
-                new_sheet.Name = sheet_name
-                
-                # Place view on sheet
+    created_sheets = []
+
+    for scope_box_name in selected_scope_boxes:
+        t_view = None
+        t_sheet = None
+
+        try:
+            scope_box = scope_box_options[scope_box_name]
+
+            # Transaction 1: create and finalize the dependent view before placement.
+            t_view = DB.Transaction(doc, "Create dependent view: {}".format(scope_box_name))
+            t_view.Start()
+
+            dependent_view_id = active_view.Duplicate(DB.ViewDuplicateOption.AsDependent)
+            dependent_view = doc.GetElement(dependent_view_id)
+
+            new_view_name = "{} - {}".format(active_view.Name, scope_box_name)
+            dependent_view.Name = new_view_name
+
+            scope_param = dependent_view.get_Parameter(DB.BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP)
+            if not scope_param or scope_param.IsReadOnly:
+                raise Exception("Scope box parameter is unavailable or read-only for view {}".format(new_view_name))
+
+            scope_param.Set(scope_box.Id)
+            doc.Regenerate()
+
+            t_view.Commit()
+            t_view = None
+
+            # Transaction 2: create the sheet and place the already-updated view.
+            t_sheet = DB.Transaction(doc, "Create sheet and place view: {}".format(scope_box_name))
+            t_sheet.Start()
+
+            sheet_number = "{}.{}".format(base_sheet_name, scope_box_name)
+            sheet_name = new_view_name
+
+            new_sheet = DB.ViewSheet.Create(doc, selected_title_block.Id)
+            new_sheet.SheetNumber = sheet_number
+            new_sheet.Name = sheet_name
+
+            outline = new_sheet.Outline
+            center_point = DB.XYZ(
+                (outline.Max.U + outline.Min.U) / 2,
+                (outline.Max.V + outline.Min.V) / 2,
+                0
+            )
+
+            viewport = DB.Viewport.Create(doc, new_sheet.Id, dependent_view_id, center_point)
+            viewport.SetBoxCenter(center_point)
+            doc.Regenerate()
+
+            t_sheet.Commit()
+            t_sheet = None
+
+            created_sheets.append((sheet_number, sheet_name))
+
+        except Exception as e:
+            if t_sheet:
                 try:
-                    # Get the center of the sheet for view placement
-                    outline = new_sheet.Outline
-                    center_point = DB.XYZ(
-                        (outline.Max.U + outline.Min.U) / 2,
-                        (outline.Max.V + outline.Min.V) / 2,
-                        0
-                    )
-                    
-                    # Create viewport
-                    viewport = DB.Viewport.Create(doc, new_sheet.Id, dependent_view_id, center_point)
-                    
-                    created_sheets.append((sheet_number, sheet_name))
-                    
-                except Exception as e:
-                    print("Error placing view {} on sheet {}: {}".format(new_view_name, sheet_number, str(e)))
-                    
-            except Exception as e:
-                print("Error processing scope box {}: {}".format(scope_box_name, str(e)))
-                continue
-        
-        t.Commit()
-        
-        # Report results
-        if created_sheets:
-            message = "Successfully created {} sheets:\n\n".format(len(created_sheets))
-            for sheet_num, sheet_name in created_sheets:
-                message += "- {}: {}\n".format(sheet_num, sheet_name)
-            forms.alert(message, title="Success")
-        else:
-            forms.alert("No sheets were created.", title="Warning")
-            
-    except Exception as e:
-        t.RollBack()
-        forms.alert("Error during sheet creation: {}".format(str(e)), title="Error")
+                    t_sheet.RollBack()
+                except Exception:
+                    pass
+
+            if t_view:
+                try:
+                    t_view.RollBack()
+                except Exception:
+                    pass
+
+            print("Error processing scope box {}: {}".format(scope_box_name, str(e)))
+            continue
+
+    # Report results
+    if created_sheets:
+        message = "Successfully created {} sheets:\n\n".format(len(created_sheets))
+        for sheet_num, sheet_name in sorted(created_sheets, key=lambda item: item[0]):
+            message += "- {}: {}\n".format(sheet_num, sheet_name)
+        forms.alert(message, title="Success")
+    else:
+        forms.alert("No sheets were created.", title="Warning")
         
 except Exception as e:
     forms.alert("Script error: {}".format(str(e)), title="Error")

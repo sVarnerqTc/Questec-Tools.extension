@@ -4,16 +4,43 @@ clr.AddReference('RevitAPIUI')
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import *
 from pyrevit import revit, DB, forms
+from System.Collections.Generic import List
 import math
 
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 active_view = doc.ActiveView
 
+def get_qtc_error_parameter(element, require_writable):
+    matching = list(element.GetParameters('QTC Error'))
+    if len(matching) == 0:
+        return None, 'QTC Error not found on element'
+
+    string_params = [p for p in matching if p.StorageType == StorageType.String]
+    if len(string_params) == 0:
+        return None, 'QTC Error exists but is not a text parameter'
+
+    if not require_writable:
+        return string_params[0], None
+
+    writable = [p for p in string_params if not p.IsReadOnly]
+    if len(writable) == 0:
+        return None, 'QTC Error text parameter is read-only on this element'
+
+    return writable[0], None
+
 # Lists to store results
 hangers_with_pipes = []  # Successful matches
 hangers_no_pipes = []    # Hangers with no pipes nearby
 hangers_multiple_systems = []  # Hangers with conflicting pipes
+error_hanger_ids = set()
+error_pipe_ids = set()
+
+def track_error_elements(hanger, related_pipes=None):
+    error_hanger_ids.add(hanger.Id.IntegerValue)
+    if related_pipes:
+        for pipe in related_pipes:
+            error_pipe_ids.add(pipe.Id.IntegerValue)
 
 # Get all pipes and pipe accessories in active view
 collector_pipes = FilteredElementCollector(doc, active_view.Id)\
@@ -173,7 +200,7 @@ for hanger in hangers:
     if not conflicting_pipes:
         hangers_no_pipes.append(hanger)
     elif len(conflicting_pipes) == 1:
-        hangers_with_pipes.append((hanger, conflicting_pipes[0], False))
+        hangers_with_pipes.append((hanger, conflicting_pipes[0], False, conflicting_pipes))
     else:
         # Check if all conflicting pipes have same properties
         first_pipe = conflicting_pipes[0]
@@ -187,38 +214,125 @@ for hanger in hangers:
                 break
         
         if all_same:
-            hangers_with_pipes.append((hanger, first_pipe, True))
+            hangers_with_pipes.append((hanger, first_pipe, True, conflicting_pipes))
         else:
             hangers_multiple_systems.append((hanger, conflicting_pipes))
 
 def set_parameter_safely(element, param_name, value):
     param = element.LookupParameter(param_name)
     if param:
-        param.Set(value)
+        try:
+            param.Set(value)
+            return True
+        except Exception as ex:
+            print("Warning: Failed to set parameter '{}' on element {}: {}".format(param_name, element.Id, str(ex)))
+            if param_name != 'QTC Error':
+                set_error_message(element, "Parameter {} set failed".format(param_name))
+            return False
     else:
         print("Warning: Parameter '{}' not found on element {}".format(param_name, element.Id))
-        error_param = element.LookupParameter('QTC Error')
-        if error_param:
-            error_param.Set("Parameter {} not found".format(param_name))
-        else:
-            print("Warning: Parameter 'QTC Error' not found on element {}".format(element.Id))
+        if param_name != 'QTC Error':
+            if not set_error_message(element, "Parameter {} not found".format(param_name)):
+                print("Warning: Parameter 'QTC Error' not found or not writable on element {}".format(element.Id))
+        return False
 
 def set_error_message(element, message):
-    error_param = element.LookupParameter('QTC Error')
-    if error_param and not error_param.IsReadOnly:
+    error_param, reason = get_qtc_error_parameter(element, require_writable=True)
+    if error_param is None:
+        print("Warning: {} on element {}".format(reason, element.Id))
+        return False
+
+    try:
         error_param.Set(message)
         return True
+    except Exception as ex:
+        print("Warning: Failed writing QTC Error on element {}: {}".format(element.Id, str(ex)))
+        return False
 
-    print("Warning: QTC Error not found or not writable on element {}".format(element.Id))
+def is_script_error_message(message):
+    if not message:
+        return False
+
+    static_messages = set([
+        'Hanger elevation does not match pipe centerline',
+        'Hanger size too small for pipe + insulation',
+        'Rod diameter does not match standards table',
+        'Pipe size exceeds standards table',
+        'Multiple pipes same system',
+        'No pipe found',
+        'Multiple systems found'
+    ])
+
+    if message in static_messages:
+        return True
+
+    if message.startswith('Parameter ') and (
+        message.endswith(' set failed') or message.endswith(' not found')
+    ):
+        return True
+
     return False
+
+def clear_script_error_message_if_present(element):
+    error_param, reason = get_qtc_error_parameter(element, require_writable=True)
+    if error_param is None:
+        print("Warning: {} on element {}".format(reason, element.Id))
+        return False
+
+    current_message = error_param.AsString()
+    if is_script_error_message(current_message):
+        try:
+            error_param.Set('')
+            return True
+        except Exception as ex:
+            print("Warning: Failed clearing QTC Error on element {}: {}".format(element.Id, str(ex)))
+            return False
+
+    return True
+
+def get_expected_rod_diameter(pipe_size_feet):
+    pipe_size_inches = pipe_size_feet * 12.0
+    size_tolerance_inches = 1e-4
+
+    if pipe_size_inches > (12.0 + size_tolerance_inches):
+        return None, 'Pipe size exceeds standards table'
+
+    if pipe_size_inches <= (4.0 + size_tolerance_inches):
+        return 0.375 / 12.0, None
+
+    if (pipe_size_inches >= (5.0 - size_tolerance_inches)) and (pipe_size_inches <= (8.0 + size_tolerance_inches)):
+        return 0.5 / 12.0, None
+
+    if abs(pipe_size_inches - 10.0) <= size_tolerance_inches:
+        return 0.625 / 12.0, None
+
+    if abs(pipe_size_inches - 12.0) <= size_tolerance_inches:
+        return 0.75 / 12.0, None
+
+    return None, None
 
 elevation_tolerance = 1.0 / 192.0  # 1/16 in in internal feet
 mismatched_hanger_targets = {}
-for hanger, pipe, multiple_same_systems in hangers_with_pipes:
+rod_mismatch_targets = {}
+pipe_size_exceeds_standards = set()
+rod_diameter_tolerance = 1e-6
+for hanger, pipe, multiple_same_systems, related_pipes in hangers_with_pipes:
     hanger_location = hanger.Location.Point
     centerline_z_at_hanger = get_centerline_elevation_at_hanger_xy(pipe.Location.Curve, hanger_location)
     if abs(hanger_location.Z - centerline_z_at_hanger) > elevation_tolerance:
         mismatched_hanger_targets[hanger.Id.IntegerValue] = centerline_z_at_hanger
+
+    expected_rod_diameter, standards_warning = get_expected_rod_diameter(pipe.LookupParameter('Diameter').AsDouble())
+    if standards_warning == 'Pipe size exceeds standards table':
+        pipe_size_exceeds_standards.add(hanger.Id.IntegerValue)
+    elif expected_rod_diameter is not None:
+        rod_param = hanger.LookupParameter('Rod Diameter')
+        if rod_param is None:
+            rod_mismatch_targets[hanger.Id.IntegerValue] = expected_rod_diameter
+        else:
+            actual_rod_diameter = rod_param.AsDouble()
+            if abs(actual_rod_diameter - expected_rod_diameter) > rod_diameter_tolerance:
+                rod_mismatch_targets[hanger.Id.IntegerValue] = expected_rod_diameter
 
 update_mismatched_hanger_elevations = False
 if len(mismatched_hanger_targets) > 0:
@@ -234,15 +348,40 @@ if len(mismatched_hanger_targets) > 0:
         warn_icon=True
     )
 
+update_mismatched_rod_diameters = False
+if len(rod_mismatch_targets) > 0:
+    rod_prompt = (
+        "{} hangers do not match the rod diameter standards for their pipe size.\n\n"
+        "Update rod diameters to match standards?"
+    ).format(len(rod_mismatch_targets))
+    update_mismatched_rod_diameters = forms.alert(
+        rod_prompt,
+        title='Rod Diameter Mismatch',
+        yes=True,
+        no=True,
+        warn_icon=True
+    )
+
 updated_hanger_elevation_count = 0
 flagged_hanger_elevation_count = 0
+flagged_hanger_size_count = 0
+updated_rod_diameter_count = 0
+flagged_rod_diameter_count = 0
+flagged_pipe_standards_count = 0
+one_inch_in_feet = 1.0 / 12.0
+three_inches_in_feet = 3.0 / 12.0
+insulation_match_tolerance = 1e-6
 
 # Modify the transaction section
 with revit.Transaction('Update Hanger Parameters'):
     # First handle successful matches
-    for hanger, pipe, multiple_same_systems in hangers_with_pipes:
+    for hanger, pipe, multiple_same_systems, related_pipes in hangers_with_pipes:
         # Get hanger XY location
         hanger_location = hanger.Location.Point
+        has_unresolved_elevation_mismatch = False
+        has_hanger_size_mismatch = False
+        has_rod_diameter_mismatch = False
+        has_pipe_size_standards_warning = False
 
         # Optionally align hanger elevation to pipe centerline at hanger location.
         target_centerline_z = mismatched_hanger_targets.get(hanger.Id.IntegerValue)
@@ -256,28 +395,79 @@ with revit.Transaction('Update Hanger Parameters'):
             else:
                 set_error_message(hanger, 'Hanger elevation does not match pipe centerline')
                 flagged_hanger_elevation_count += 1
+                has_unresolved_elevation_mismatch = True
+                track_error_elements(hanger, related_pipes)
         
         # Get pipe data at hanger location
         pipe_data = get_pipe_data_at_hanger(pipe, hanger_location)
         
         # Update hanger parameters safely
-        set_parameter_safely(hanger, 'BOP', pipe_data['bop'])
-        set_parameter_safely(hanger, 'BOI', pipe_data['boi'])
-        set_parameter_safely(hanger, 'QTC Pipe Size', pipe_data['pipe_size'])
-        set_parameter_safely(hanger, 'QTC Insulation Thickness', pipe_data['insulation_thickness'])
-        set_parameter_safely(hanger, 'QTC Pipe ID', pipe_data['pipe_id'])
-        set_parameter_safely(hanger, 'Support Discipline', pipe_data['system_abbr'])
+        updates_succeeded = True
+        updates_succeeded = set_parameter_safely(hanger, 'BOP', pipe_data['bop']) and updates_succeeded
+        updates_succeeded = set_parameter_safely(hanger, 'BOI', pipe_data['boi']) and updates_succeeded
+        updates_succeeded = set_parameter_safely(hanger, 'QTC Pipe Size', pipe_data['pipe_size']) and updates_succeeded
+        updates_succeeded = set_parameter_safely(hanger, 'QTC Insulation Thickness', pipe_data['insulation_thickness']) and updates_succeeded
+        updates_succeeded = set_parameter_safely(hanger, 'QTC Pipe ID', pipe_data['pipe_id']) and updates_succeeded
+        updates_succeeded = set_parameter_safely(hanger, 'Support Discipline', pipe_data['system_abbr']) and updates_succeeded
+
+        # Hanger size must be >= pipe OD + 2x insulation thickness.
+        required_hanger_size = pipe_data['pipe_size'] + (2.0 * pipe_data['insulation_thickness'])
+        if abs(pipe_data['insulation_thickness'] - one_inch_in_feet) <= insulation_match_tolerance:
+            required_hanger_size = max(required_hanger_size, three_inches_in_feet)
+        actual_hanger_size = 2.0 * hanger.LookupParameter('Nom Radius').AsDouble()
+        if actual_hanger_size < required_hanger_size:
+            set_error_message(hanger, 'Hanger size too small for pipe + insulation')
+            has_hanger_size_mismatch = True
+            flagged_hanger_size_count += 1
+            track_error_elements(hanger, related_pipes)
+
+        if hanger.Id.IntegerValue in pipe_size_exceeds_standards:
+            set_error_message(hanger, 'Pipe size exceeds standards table')
+            has_pipe_size_standards_warning = True
+            flagged_pipe_standards_count += 1
+            track_error_elements(hanger, related_pipes)
+
+        target_rod_diameter = rod_mismatch_targets.get(hanger.Id.IntegerValue)
+        if target_rod_diameter is not None:
+            if update_mismatched_rod_diameters:
+                if set_parameter_safely(hanger, 'Rod Diameter', target_rod_diameter):
+                    updated_rod_diameter_count += 1
+                else:
+                    has_rod_diameter_mismatch = True
+                    track_error_elements(hanger, related_pipes)
+            else:
+                set_error_message(hanger, 'Rod diameter does not match standards table')
+                has_rod_diameter_mismatch = True
+                flagged_rod_diameter_count += 1
+                track_error_elements(hanger, related_pipes)
+
+        if not updates_succeeded:
+            track_error_elements(hanger, related_pipes)
+
+        if updates_succeeded and (not multiple_same_systems) and (not has_unresolved_elevation_mismatch) and (not has_hanger_size_mismatch) and (not has_rod_diameter_mismatch) and (not has_pipe_size_standards_warning):
+            clear_script_error_message_if_present(hanger)
 
         if multiple_same_systems:
             set_error_message(hanger, 'Multiple pipes same system')
+            track_error_elements(hanger, related_pipes)
 
     # Handle hangers with no pipes
     for hanger in hangers_no_pipes:
         set_error_message(hanger, 'No pipe found')
+        track_error_elements(hanger)
     
     # Handle hangers with multiple systems
     for hanger, pipes in hangers_multiple_systems:
         set_error_message(hanger, 'Multiple systems found')
+        track_error_elements(hanger, pipes)
+
+if len(error_hanger_ids) > 0:
+    isolate_element_ids = List[ElementId]()
+    for element_id in sorted(error_hanger_ids.union(error_pipe_ids)):
+        isolate_element_ids.Add(ElementId(element_id))
+
+    with revit.Transaction('Isolate Error Hangers and Pipes'):
+        active_view.IsolateElementsTemporary(isolate_element_ids)
 
 # Update results message to include parameter updates
 results_message = '''Results:
@@ -285,11 +475,19 @@ results_message = '''Results:
 {1} hangers with no pipes
 {2} hangers with conflicting pipes
 {3} hanger elevations updated to centerline
-{4} hangers flagged for elevation mismatch'''.format(
+{4} hangers flagged for elevation mismatch
+{5} hangers flagged for undersized support
+{6} rod diameters updated to standards
+{7} hangers flagged for rod diameter mismatch
+{8} hangers flagged for pipe size above standards table'''.format(
     len(hangers_with_pipes),
     len(hangers_no_pipes),
     len(hangers_multiple_systems),
     updated_hanger_elevation_count,
-    flagged_hanger_elevation_count
+    flagged_hanger_elevation_count,
+    flagged_hanger_size_count,
+    updated_rod_diameter_count,
+    flagged_rod_diameter_count,
+    flagged_pipe_standards_count
 )
 forms.alert(results_message)

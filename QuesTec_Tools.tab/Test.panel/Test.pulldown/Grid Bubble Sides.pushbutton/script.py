@@ -4,10 +4,11 @@ __title__ = "Grid Bubble\nSides"
 __author__ = "QuesTec"
 __doc__ = "Turn grid bubbles on/off by Left, Right, Top, Bottom for selected grids in active view."
 
-from Autodesk.Revit.DB import DatumEnds, DatumExtentType, Grid
+from Autodesk.Revit.DB import DatumEnds, DatumExtentType, ElementId, Grid, TemporaryViewMode
 from Autodesk.Revit.UI.Selection import ObjectType
 from Autodesk.Revit.Exceptions import OperationCanceledException
 from pyrevit import forms, revit, script
+from System.Collections.Generic import List
 
 
 def get_selected_or_picked_elements(uidoc, doc):
@@ -29,14 +30,17 @@ def filter_grids(elements):
     return [el for el in elements if isinstance(el, Grid)]
 
 
-def classify_orientation(grid, view):
+def get_grid_curve_for_view(grid, view):
     view_curves = list(grid.GetCurvesInView(DatumExtentType.ViewSpecific, view))
     if not view_curves:
         view_curves = list(grid.GetCurvesInView(DatumExtentType.Model, view))
     if not view_curves:
-        curve = grid.Curve
-    else:
-        curve = view_curves[0]
+        return grid.Curve
+    return view_curves[0]
+
+
+def classify_orientation(grid, view):
+    curve = get_grid_curve_for_view(grid, view)
 
     p0 = curve.GetEndPoint(0)
     p1 = curve.GetEndPoint(1)
@@ -56,7 +60,7 @@ def get_page_xy(point, right_dir, up_dir):
 
 
 def get_side_membership(grid, view):
-    curve = grid.Curve
+    curve = get_grid_curve_for_view(grid, view)
     p0 = curve.GetEndPoint(0)
     p1 = curve.GetEndPoint(1)
 
@@ -69,19 +73,21 @@ def get_side_membership(grid, view):
     side_end0 = set()
     side_end1 = set()
 
-    if x0 <= x1:
-        side_end0.add("Left")
-        side_end1.add("Right")
+    orientation = classify_orientation(grid, view)
+    if orientation == "North/South":
+        if y0 <= y1:
+            side_end0.add("Bottom")
+            side_end1.add("Top")
+        else:
+            side_end0.add("Top")
+            side_end1.add("Bottom")
     else:
-        side_end0.add("Right")
-        side_end1.add("Left")
-
-    if y0 <= y1:
-        side_end0.add("Bottom")
-        side_end1.add("Top")
-    else:
-        side_end0.add("Top")
-        side_end1.add("Bottom")
+        if x0 <= x1:
+            side_end0.add("Left")
+            side_end1.add("Right")
+        else:
+            side_end0.add("Right")
+            side_end1.add("Left")
 
     return {
         DatumEnds.End0: side_end0,
@@ -160,6 +166,37 @@ def set_bubbles_for_grid(grid, view, selected_sides, doc):
     }
 
 
+def capture_temp_isolate_ids(view):
+    if not view.IsTemporaryHideIsolateActive():
+        return []
+
+    try:
+        return list(view.GetTemporaryHideIsolateElementIds())
+    except Exception:
+        return []
+
+
+def refresh_temp_isolate(uidoc, view, isolate_ids):
+    if not isolate_ids:
+        return False, "No isolated element ids found"
+
+    id_list = List[ElementId]()
+    for eid in isolate_ids:
+        id_list.Add(eid)
+
+    # Split disable/reapply into separate transactions so Revit redraws datum bubbles.
+    with revit.Transaction("Clear Temporary Isolate"):
+        view.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate)
+
+    uidoc.RefreshActiveView()
+
+    with revit.Transaction("Reapply Temporary Isolate"):
+        view.IsolateElementsTemporary(id_list)
+
+    uidoc.RefreshActiveView()
+    return True, "Reapplied {0} isolated elements".format(id_list.Count)
+
+
 def main():
     uidoc = revit.uidoc
     doc = revit.doc
@@ -188,6 +225,8 @@ def main():
     selected_sides = ask_sides(dominant, ns_count, ew_count)
     if selected_sides is None:
         forms.alert("Operation cancelled.", exitscript=True)
+
+    temp_isolate_ids = capture_temp_isolate_ids(active_view)
 
     failed = 0
     errors = []
@@ -226,6 +265,15 @@ def main():
                 failed += 1
                 errors.append("Grid {0}: {1}".format(grid.Id.IntegerValue, str(ex)))
 
+    temp_isolate_refreshed = False
+    temp_isolate_message = ""
+    if temp_isolate_ids:
+        try:
+            temp_isolate_refreshed, temp_isolate_message = refresh_temp_isolate(uidoc, active_view, temp_isolate_ids)
+        except Exception as ex:
+            temp_isolate_message = str(ex)
+            errors.append("Temporary isolate refresh failed: {0}".format(str(ex)))
+
     uidoc.RefreshActiveView()
 
     summary = (
@@ -249,6 +297,11 @@ def main():
     print("Grid Bubble Sides")
     print("=" * 80)
     print(summary)
+
+    if temp_isolate_ids:
+        print("Temporary isolate refresh: {0}".format("Applied" if temp_isolate_refreshed else "Not applied"))
+        if temp_isolate_message:
+            print("Temporary isolate details: {0}".format(temp_isolate_message))
 
     if errors:
         print("\nErrors:")
