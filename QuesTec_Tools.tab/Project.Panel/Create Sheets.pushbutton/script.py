@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pyrevit import forms, revit, DB
+from pyrevit import forms, revit, DB, script
 import clr
 
 try:
@@ -20,6 +20,10 @@ try:
 
     if not base_sheet_name:
         forms.alert("No base sheet name provided.", exitscript=True)
+
+    # Horizontal viewport shift in inches. Negative = left, positive = right.
+    config = script.get_config()
+    viewport_shift_inches = getattr(config, "viewport_shift_inches", -1.5)
 
     # Get all scope boxes in the project
     scope_boxes = DB.FilteredElementCollector(doc)\
@@ -113,14 +117,13 @@ try:
             new_sheet.Name = sheet_name
 
             outline = new_sheet.Outline
-            center_point = DB.XYZ(
-                (outline.Max.U + outline.Min.U) / 2,
-                (outline.Max.V + outline.Min.V) / 2,
-                0
-            )
+            center_u = (outline.Max.U + outline.Min.U) / 2
+            center_v = (outline.Max.V + outline.Min.V) / 2
+            horizontal_shift = viewport_shift_inches / 12.0
+            placement_point = DB.XYZ(center_u + horizontal_shift, center_v, 0)
 
-            viewport = DB.Viewport.Create(doc, new_sheet.Id, dependent_view_id, center_point)
-            viewport.SetBoxCenter(center_point)
+            viewport = DB.Viewport.Create(doc, new_sheet.Id, dependent_view_id, placement_point)
+            viewport.SetBoxCenter(placement_point)
             doc.Regenerate()
 
             t_sheet.Commit()

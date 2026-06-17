@@ -203,7 +203,7 @@ def prompt_for_reference():
         return next(elem for elem, name in display_list.items() if name == selected)
     return None
 
-def collect_pipe_accessories(doc, view_id, reference_data, reference_type):
+def collect_pipe_accessories(doc, view_id, reference_data=None, reference_type=None):
     """Collect all pipe accessories from the active view"""
     output = script.get_output()  # Debug output
     
@@ -215,7 +215,7 @@ def collect_pipe_accessories(doc, view_id, reference_data, reference_type):
     all_elements = collector.ToElements()
     # output.print_md("Total accessories found: {}".format(len(all_elements)))
     
-    if reference_type == 'geometry':
+    if reference_type == 'geometry' and reference_data:
         output.print_md("Using geometry reference: {} on Element ID {}".format(
             reference_data['type'], reference_data['element'].Id))
     
@@ -240,6 +240,51 @@ def process_accessories(doc, accessories):
     
     # output.print_md("\nTotal accessories with parameter: {0}".format(len(filtered_accessories)))
     return filtered_accessories
+
+def is_trapeze_hanger(element):
+    """Return True if element belongs to a trapeze family."""
+    family_name = element.Symbol.FamilyName if element.Symbol else ""
+    return "trapeze" in family_name.lower()
+
+def get_target_hangers(doc, active_view):
+    """Use selected hangers/trapezes when possible, otherwise prompt to process all visible targets."""
+    output = script.get_output()
+
+    # Run the hanger filter first so we know how many eligible targets are available in view.
+    visible_accessories = collect_pipe_accessories(doc, active_view.Id)
+    visible_single_rod_hangers = process_accessories(doc, visible_accessories)
+    visible_trapeze_hangers = collect_trapeze_hangers(doc, active_view.Id, visible_accessories)
+
+    visible_targets_by_id = {hanger.Id: hanger for hanger in visible_single_rod_hangers}
+    for trapeze in visible_trapeze_hangers:
+        visible_targets_by_id[trapeze.Id] = trapeze
+
+    visible_targets = list(visible_targets_by_id.values())
+    visible_count = len(visible_targets)
+
+    if visible_count == 0:
+        forms.alert("No hangers were found in the active view.", exitscript=False)
+        return []
+
+    selected_ids = set(revit.uidoc.Selection.GetElementIds())
+    selected_hangers = [hanger for hanger in visible_targets if hanger.Id in selected_ids]
+
+    if selected_hangers:
+        output.print_md("Processing {} selected hanger(s).".format(len(selected_hangers)))
+        return selected_hangers
+
+    process_all = forms.alert(
+        "No hangers are selected.\n\nDo you want to process all {} hangers in the active view?".format(visible_count),
+        yes=True,
+        no=True,
+        exitscript=False
+    )
+
+    if process_all:
+        return visible_targets
+
+    output.print_md("No hangers selected. Script cancelled.")
+    return []
 
 def calculate_elevation_differences(doc, reference_data, reference_type, filtered_elements):
     """Calculate elevation differences accounting for different reference types"""
@@ -344,24 +389,15 @@ def prompt_for_offset():
         forms.alert("Invalid number format. Using 0 as offset.", exitscript=False)
         return 0
 
-def collect_trapeze_hangers(doc, view_id):
-    """Collect all pipe accessories with 'trapeze' in the family name"""
-    output = script.get_output()
-    
-    collector = (DB.FilteredElementCollector(doc, view_id)
-                .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
-                .WhereElementIsNotElementType())
-    
-    all_elements = collector.ToElements()
-    
-    trapeze_hangers = []
-    for elem in all_elements:
-        # Get family name
-        family_name = elem.Symbol.FamilyName if elem.Symbol else ""
-        if "trapeze" in family_name.lower():
-            trapeze_hangers.append(elem)
-    
-    #output.print_md("Found {} trapeze hangers".format(len(trapeze_hangers)))
+def collect_trapeze_hangers(doc, view_id, source_hangers=None):
+    """Collect trapeze hangers from a provided set or from active view."""
+    if source_hangers is None:
+        collector = (DB.FilteredElementCollector(doc, view_id)
+                    .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
+                    .WhereElementIsNotElementType())
+        source_hangers = collector.ToElements()
+
+    trapeze_hangers = [elem for elem in source_hangers if is_trapeze_hanger(elem)]
     return trapeze_hangers
 
 def set_trapeze_elevations(doc, reference_data, reference_type, trapeze_hangers):
@@ -528,6 +564,10 @@ def main():
     
     try:
         doc, active_view = get_active_document_and_view()
+
+        target_hangers = get_target_hangers(doc, active_view)
+        if not target_hangers:
+            return
         
         # Get reference selection (geometry or traditional reference)
         reference_data, reference_type = prompt_for_geometry_selection()
@@ -535,15 +575,14 @@ def main():
         if not reference_data:
             output.print_md("No reference selected. Script cancelled.")
             return
-            
-        accessories = collect_pipe_accessories(doc, active_view.Id, reference_data, reference_type)
-        processed_accessories = process_accessories(doc, accessories)
+
+        processed_accessories = process_accessories(doc, target_hangers)
         
         # Calculate elevation differences for single rod hangers
         differences = calculate_elevation_differences(doc, reference_data, reference_type, processed_accessories)
         
         # Process trapeze hangers
-        trapeze_hangers = collect_trapeze_hangers(doc, active_view.Id)
+        trapeze_hangers = collect_trapeze_hangers(doc, active_view.Id, target_hangers)
         set_trapeze_elevations(doc, reference_data, reference_type, trapeze_hangers)
         
         # print_results(output, processed_accessories)

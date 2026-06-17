@@ -57,10 +57,29 @@ collector_accessories = FilteredElementCollector(doc, active_view.Id)\
     .ToElements()
 
 # Filter accessories to only those with BOP parameter
-hangers = []
+visible_hangers = []
 for acc in collector_accessories:
     if acc.LookupParameter('BOP'):
-        hangers.append(acc)
+        visible_hangers.append(acc)
+
+visible_hanger_count = len(visible_hangers)
+if visible_hanger_count == 0:
+    forms.alert('No hangers were found in the active view.', exitscript=True)
+
+selected_ids = set(uidoc.Selection.GetElementIds())
+hangers = [hanger for hanger in visible_hangers if hanger.Id in selected_ids]
+
+if len(hangers) == 0:
+    process_all = forms.alert(
+        'No hangers are selected.\n\nDo you want to process all {} hangers in the active view?'.format(visible_hanger_count),
+        yes=True,
+        no=True,
+        exitscript=False
+    )
+    if process_all:
+        hangers = visible_hangers
+    else:
+        forms.alert('No hangers selected. Script cancelled.', exitscript=True)
 
 # Function to check if point is within sphere
 def is_point_in_sphere(point_to_check, sphere_center, radius):
@@ -371,6 +390,7 @@ flagged_pipe_standards_count = 0
 one_inch_in_feet = 1.0 / 12.0
 three_inches_in_feet = 3.0 / 12.0
 insulation_match_tolerance = 1e-6
+hanger_size_tolerance = 1e-6
 
 # Modify the transaction section
 with revit.Transaction('Update Hanger Parameters'):
@@ -415,7 +435,7 @@ with revit.Transaction('Update Hanger Parameters'):
         if abs(pipe_data['insulation_thickness'] - one_inch_in_feet) <= insulation_match_tolerance:
             required_hanger_size = max(required_hanger_size, three_inches_in_feet)
         actual_hanger_size = 2.0 * hanger.LookupParameter('Nom Radius').AsDouble()
-        if actual_hanger_size < required_hanger_size:
+        if (actual_hanger_size + hanger_size_tolerance) < required_hanger_size:
             set_error_message(hanger, 'Hanger size too small for pipe + insulation')
             has_hanger_size_mismatch = True
             flagged_hanger_size_count += 1
