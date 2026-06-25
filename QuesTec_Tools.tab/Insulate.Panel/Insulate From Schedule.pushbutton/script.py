@@ -223,12 +223,113 @@ def collect_existing_pipe_insulation(doc):
     return existing
 
 
+def get_host_workset_id(element):
+    try:
+        workset_id = element.WorksetId
+        if workset_id and workset_id != ElementId.InvalidElementId:
+            return workset_id
+    except Exception:
+        pass
+
+    return None
+
+
+def resolve_element(doc, element_or_id):
+    if element_or_id is None:
+        return None
+
+    if isinstance(element_or_id, ElementId):
+        return doc.GetElement(element_or_id)
+
+    try:
+        return doc.GetElement(ElementId(int(element_or_id)))
+    except Exception:
+        return element_or_id
+
+
+def get_element_workset_value(element):
+    if not element:
+        return None
+
+    try:
+        partition_param = element.get_Parameter(BuiltInParameter.ELEM_PARTITION_PARAM)
+        if partition_param and partition_param.HasValue:
+            return partition_param.AsInteger()
+    except Exception:
+        pass
+
+    try:
+        workset_id = element.WorksetId
+        if workset_id:
+            return workset_id.IntegerValue
+    except Exception:
+        pass
+
+    return None
+
+
+def create_insulation_on_workset(doc, workset_table, host_element_id, insulation_type_id, thickness_feet, target_workset_id):
+    original_workset_id = None
+
+    try:
+        original_workset_id = workset_table.GetActiveWorksetId()
+    except Exception:
+        original_workset_id = None
+
+    try:
+        if target_workset_id and original_workset_id != target_workset_id:
+            workset_table.SetActiveWorksetId(target_workset_id)
+
+        created = PipeInsulation.Create(doc, host_element_id, insulation_type_id, thickness_feet)
+        return resolve_element(doc, created)
+    finally:
+        try:
+            if original_workset_id and original_workset_id != workset_table.GetActiveWorksetId():
+                workset_table.SetActiveWorksetId(original_workset_id)
+        except Exception:
+            pass
+
+
+def ensure_insulation_on_host_workset(doc, workset_table, host_element, existing_insulation, insulation_type_id, thickness_feet):
+    host_workset_id = get_host_workset_id(host_element)
+    host_workset_value = get_element_workset_value(host_element)
+
+    if existing_insulation:
+        existing_workset_value = get_element_workset_value(existing_insulation)
+        existing_insulation.Thickness = thickness_feet
+
+        if host_workset_value is None or existing_workset_value == host_workset_value:
+            return existing_insulation, True, False
+
+        doc.Delete(existing_insulation.Id)
+        recreated = create_insulation_on_workset(
+            doc,
+            workset_table,
+            host_element.Id,
+            insulation_type_id,
+            thickness_feet,
+            host_workset_id,
+        )
+        return recreated, recreated is not None, True
+
+    created = create_insulation_on_workset(
+        doc,
+        workset_table,
+        host_element.Id,
+        insulation_type_id,
+        thickness_feet,
+        host_workset_id,
+    )
+    return created, created is not None, False
+
+
 def run_insulation(doc, view_id, schedule):
     insulation_type_id = get_default_pipe_insulation_type_id(doc)
     if not insulation_type_id:
         forms.alert('No Pipe Insulation Type found in this project.', exitscript=True)
         return
 
+    workset_table = doc.GetWorksetTable()
     pipes, fittings = collect_active_view_targets(doc, view_id)
     existing_by_host = collect_existing_pipe_insulation(doc)
 
@@ -239,6 +340,9 @@ def run_insulation(doc, view_id, schedule):
     skipped_no_schedule = 0
     skipped_no_size = 0
     skipped_zero_thickness = 0
+    workset_assigned = 0
+    workset_recreated = 0
+    workset_failed = 0
     failed = 0
 
     with Transaction(doc, 'Insulate Pipes and Fittings from Schedule') as tx:
@@ -264,11 +368,32 @@ def run_insulation(doc, view_id, schedule):
 
             existing = existing_by_host.get(pipe.Id.IntegerValue)
             try:
-                if existing:
-                    existing.Thickness = thickness_feet
+                insulation, success, recreated = ensure_insulation_on_host_workset(
+                    doc,
+                    workset_table,
+                    pipe,
+                    existing,
+                    insulation_type_id,
+                    thickness_feet,
+                )
+
+                if success and insulation:
+                    if get_element_workset_value(insulation) == get_element_workset_value(pipe):
+                        workset_assigned += 1
+                    else:
+                        workset_failed += 1
+                        failed += 1
+
+                    if recreated:
+                        workset_recreated += 1
+
+                else:
+                    workset_failed += 1
+                    failed += 1
+
+                if existing and not recreated:
                     insulated_updated += 1
                 else:
-                    PipeInsulation.Create(doc, pipe.Id, insulation_type_id, thickness_feet)
                     insulated_created += 1
             except Exception:
                 failed += 1
@@ -293,26 +418,52 @@ def run_insulation(doc, view_id, schedule):
 
             existing = existing_by_host.get(fitting.Id.IntegerValue)
             try:
-                if existing:
-                    existing.Thickness = thickness_feet
+                insulation, success, recreated = ensure_insulation_on_host_workset(
+                    doc,
+                    workset_table,
+                    fitting,
+                    existing,
+                    insulation_type_id,
+                    thickness_feet,
+                )
+
+                if success and insulation:
+                    if get_element_workset_value(insulation) == get_element_workset_value(fitting):
+                        workset_assigned += 1
+                    else:
+                        workset_failed += 1
+                        failed += 1
+
+                    if recreated:
+                        workset_recreated += 1
+
+                else:
+                    workset_failed += 1
+                    failed += 1
+
+                if existing and not recreated:
                     insulated_updated += 1
                 else:
-                    PipeInsulation.Create(doc, fitting.Id, insulation_type_id, thickness_feet)
                     insulated_created += 1
             except Exception:
                 failed += 1
 
         tx.Commit()
 
-    print('Insulation run complete for active view:')
-    print('  Targets in active view: {0}'.format(total_targets))
-    print('  Matched schedule rows: {0}'.format(matched_schedule))
-    print('  Insulation created: {0}'.format(insulated_created))
-    print('  Insulation updated: {0}'.format(insulated_updated))
-    print('  Skipped (no schedule match): {0}'.format(skipped_no_schedule))
-    print('  Skipped (size not found): {0}'.format(skipped_no_size))
-    print('  Skipped (target thickness is 0): {0}'.format(skipped_zero_thickness))
-    print('  Failed: {0}'.format(failed))
+    # Keep successful runs quiet; only report details when errors occur.
+    if failed > 0:
+        print('Insulation run completed with errors in active view:')
+        print('  Targets in active view: {0}'.format(total_targets))
+        print('  Matched schedule rows: {0}'.format(matched_schedule))
+        print('  Insulation created: {0}'.format(insulated_created))
+        print('  Insulation updated: {0}'.format(insulated_updated))
+        print('  Workset assignments applied: {0}'.format(workset_assigned))
+        print('  Insulation recreated for workset: {0}'.format(workset_recreated))
+        print('  Workset assignments failed: {0}'.format(workset_failed))
+        print('  Skipped (no schedule match): {0}'.format(skipped_no_schedule))
+        print('  Skipped (size not found): {0}'.format(skipped_no_size))
+        print('  Skipped (target thickness is 0): {0}'.format(skipped_zero_thickness))
+        print('  Failed: {0}'.format(failed))
 
 
 def main():
