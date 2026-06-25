@@ -257,6 +257,35 @@ def apply_assignment_mode(family_doc, family_param):
 
     return False
 
+def get_existing_parameter_state(family_doc, family_param):
+    """Return a human-readable description of current formula/value for a family parameter"""
+    family_manager = family_doc.FamilyManager
+    try:
+        formula = family_param.Formula
+    except Exception:
+        formula = None
+    if formula:
+        return "Formula: {}".format(formula)
+
+    current_type = family_manager.CurrentType
+    if not current_type:
+        return "Value: <no current family type available>"
+
+    storage_type = family_param.StorageType
+    if storage_type == DB.StorageType.String:
+        value = current_type.AsString(family_param)
+    elif storage_type == DB.StorageType.Integer:
+        value = current_type.AsInteger(family_param)
+    elif storage_type == DB.StorageType.Double:
+        value = current_type.AsDouble(family_param)
+    elif storage_type == DB.StorageType.ElementId:
+        value = current_type.AsElementId(family_param)
+        value = value.IntegerValue if value else None
+    else:
+        value = None
+
+    return "Value: {}".format("<not set>" if value is None else value)
+
 def add_or_update_shared_parameter(family_doc, shared_param, param_group, is_instance, value=None):
     """Add shared parameter to family and set its value if provided"""
     family_manager = family_doc.FamilyManager
@@ -302,33 +331,21 @@ def main():
     try:
         if existing_param:
             binding_label = "Instance" if existing_param.IsInstance else "Type"
+            current_state = get_existing_parameter_state(family_doc, existing_param)
             forms.alert(
-                "Parameter '{}' already exists in this family as a {} parameter.".format(
+                "Parameter '{}' already exists in this family as a {} parameter.\n{}".format(
                     existing_param.Definition.Name,
-                    binding_label
+                    binding_label,
+                    current_state
                 )
             )
 
-            if existing_param.IsInstance:
-                should_change = ask_yes_no("Do you want to change the value/formula for this existing instance parameter?")
-                if should_change:
-                    t.Start()
-                    changes_made = apply_assignment_mode(family_doc, existing_param)
-            else:
-                should_convert = ask_yes_no("This parameter is currently Type. Do you want to change it to Instance?")
-                if should_convert:
-                    t.Start()
-                    converted = make_parameter_instance(family_manager, existing_param)
-                    if converted:
-                        changes_made = True
-                        should_change = ask_yes_no("Parameter changed to Instance. Do you want to set value/formula now?")
-                        if should_change:
-                            changes_made = apply_assignment_mode(family_doc, existing_param) or changes_made
-                else:
-                    should_change_type = ask_yes_no("Do you want to change the value/formula for this existing Type parameter?")
-                    if should_change_type:
-                        t.Start()
-                        changes_made = apply_assignment_mode(family_doc, existing_param)
+            should_modify = ask_yes_no(
+                "Do you want to modify this parameter?"
+            )
+            if should_modify:
+                t.Start()
+                changes_made = apply_assignment_mode(family_doc, existing_param)
         else:
             param_group = prompt_for_parameter_group()
             if not param_group:

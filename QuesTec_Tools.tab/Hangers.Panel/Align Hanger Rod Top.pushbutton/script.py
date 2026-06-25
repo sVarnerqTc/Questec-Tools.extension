@@ -4,8 +4,22 @@ import math  # Add this import at the top
 # Add UV definition at top
 UV = DB.UV  # Define UV class from Revit DB
 
+SUPPRESS_SUCCESS_OUTPUT = True
+
+
+def log_info(message):
+    if SUPPRESS_SUCCESS_OUTPUT:
+        return
+    script.get_output().print_md(message)
+
+
+def log_error(message):
+    script.get_output().print_md(message)
+
 def setup_output():
     """Initialize and configure output window"""
+    if SUPPRESS_SUCCESS_OUTPUT:
+        return None
     output = script.get_output()
     output.set_height(800)
     return output
@@ -46,7 +60,7 @@ def prompt_for_geometry_selection():
             return prompt_for_reference(), 'reference'
             
         elif selected_type == 'Face':
-            output.print_md("Please select a face in the model...")
+            log_info("Please select a face in the model...")
             face_ref = uidoc.Selection.PickObject(
                 ObjectType.Face,
                 "Select a face"
@@ -76,7 +90,7 @@ def prompt_for_geometry_selection():
                         face_point = element.Location.Point if element.Location else DB.XYZ.Zero
                         
             except Exception as face_ex:
-                output.print_md("Warning evaluating face: {}".format(str(face_ex)))
+                log_error("Warning evaluating face: {}".format(str(face_ex)))
                 # Use element location as fallback
                 if element.Location and hasattr(element.Location, 'Point'):
                     face_point = element.Location.Point
@@ -88,7 +102,7 @@ def prompt_for_geometry_selection():
             return {'type': 'face', 'element': element, 'face': face, 'point': face_point, 'reference': face_ref}, 'geometry'
             
         elif selected_type == 'Edge':
-            output.print_md("Please select an edge in the model...")
+            log_info("Please select an edge in the model...")
             edge_ref = uidoc.Selection.PickObject(
                 ObjectType.Edge,
                 "Select an edge"
@@ -125,7 +139,7 @@ def prompt_for_geometry_selection():
                         edge_point = element.Location.Point if element.Location else DB.XYZ.Zero
                         
             except Exception as edge_ex:
-                output.print_md("Warning evaluating edge: {}".format(str(edge_ex)))
+                log_error("Warning evaluating edge: {}".format(str(edge_ex)))
                 # Use element location as fallback
                 if element.Location and hasattr(element.Location, 'Point'):
                     edge_point = element.Location.Point
@@ -137,7 +151,7 @@ def prompt_for_geometry_selection():
             return {'type': 'edge', 'element': element, 'edge': edge, 'point': edge_point, 'reference': edge_ref}, 'geometry'
             
         elif selected_type == 'Point on Element':
-            output.print_md("Please select a point on an element...")
+            log_info("Please select a point on an element...")
             point_ref = uidoc.Selection.PickObject(
                 ObjectType.Element,
                 "Select an element to get its location point"
@@ -160,7 +174,7 @@ def prompt_for_geometry_selection():
             return {'type': 'point', 'element': element, 'point': element_point, 'reference': point_ref}, 'geometry'
             
     except Exception as ex:
-        output.print_md("Selection cancelled or failed: {}".format(str(ex)))
+        log_error("Selection cancelled or failed: {}".format(str(ex)))
         return None, None
     
     return None, None
@@ -216,7 +230,7 @@ def collect_pipe_accessories(doc, view_id, reference_data=None, reference_type=N
     # output.print_md("Total accessories found: {}".format(len(all_elements)))
     
     if reference_type == 'geometry' and reference_data:
-        output.print_md("Using geometry reference: {} on Element ID {}".format(
+        log_info("Using geometry reference: {} on Element ID {}".format(
             reference_data['type'], reference_data['element'].Id))
     
     return all_elements
@@ -270,7 +284,7 @@ def get_target_hangers(doc, active_view):
     selected_hangers = [hanger for hanger in visible_targets if hanger.Id in selected_ids]
 
     if selected_hangers:
-        output.print_md("Processing {} selected hanger(s).".format(len(selected_hangers)))
+        log_info("Processing {} selected hanger(s).".format(len(selected_hangers)))
         return selected_hangers
 
     process_all = forms.alert(
@@ -283,7 +297,7 @@ def get_target_hangers(doc, active_view):
     if process_all:
         return visible_targets
 
-    output.print_md("No hangers selected. Script cancelled.")
+    log_info("No hangers selected. Script cancelled.")
     return []
 
 def calculate_elevation_differences(doc, reference_data, reference_type, filtered_elements):
@@ -293,7 +307,7 @@ def calculate_elevation_differences(doc, reference_data, reference_type, filtere
     # output.print_md("---")
     
     if not filtered_elements:
-        output.print_md("No elements to compare")
+        log_info("No elements to compare")
         return []
     
     # Get project base point elevation
@@ -309,7 +323,7 @@ def calculate_elevation_differences(doc, reference_data, reference_type, filtere
         # output.print_md("Survey to Base Point Elevation: {:.2f}".format(survey_to_base_point))
     else:
         survey_to_base_point = 0.0
-        output.print_md("Warning: Could not find Project Base Point")
+        log_error("Warning: Could not find Project Base Point")
     base_point_elevation = survey_to_base_point - survey_to_internal_elevation
     # output.print_md("* project Base Point: {:.2f}".format(base_point_elevation))
 
@@ -419,7 +433,7 @@ def set_trapeze_elevations(doc, reference_data, reference_type, trapeze_hangers)
             DB.BuiltInParameter.BASEPOINT_ELEVATION_PARAM).AsDouble()
     else:
         survey_to_base_point = 0.0
-        output.print_md("Warning: Could not find Project Base Point")
+        log_error("Warning: Could not find Project Base Point")
     base_point_elevation = survey_to_base_point - survey_to_internal_elevation
     
     # Calculate reference elevation
@@ -501,7 +515,7 @@ def set_rod_extensions(doc, differences, filtered_elements):
 
             
             if not rod_extn_param:
-                output.print_md("* Missing Rod Extension parameter for Element ID: {}".format(element.Id))
+                log_error("* Missing Rod Extension parameter for Element ID: {}".format(element.Id))
                 continue
                 
             offset = deduct_param.AsDouble() if (deduct_param and deduct_param.HasValue) else 0 #Using LengthtobeDeducted instead of offset and horiz rod offset
@@ -517,15 +531,15 @@ def set_rod_extensions(doc, differences, filtered_elements):
         
         # Print excluded elements
         if excluded_elements:
-            output.print_md("\nExcluded hangers above the reference plane:")
+            log_error("\nExcluded hangers above the reference plane:")
             for elem_id in excluded_elements:
-                output.print_md("* Element ID: {}".format(elem_id))
+                log_error("* Element ID: {}".format(elem_id))
                 
         # output.print_md("\nSuccessfully updated rod extensions with offset: {:.2f}".format(user_offset))
         
     except Exception as ex:
         t.RollBack()
-        output.print_md("\nError setting rod extensions: {}".format(str(ex)))
+        log_error("\nError setting rod extensions: {}".format(str(ex)))
 
 def print_results(output, accessories):
     """Format and print results to output window"""
@@ -573,7 +587,7 @@ def main():
         reference_data, reference_type = prompt_for_geometry_selection()
         
         if not reference_data:
-            output.print_md("No reference selected. Script cancelled.")
+            log_info("No reference selected. Script cancelled.")
             return
 
         processed_accessories = process_accessories(doc, target_hangers)

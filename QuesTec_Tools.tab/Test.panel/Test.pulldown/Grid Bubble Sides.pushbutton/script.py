@@ -168,17 +168,33 @@ def set_bubbles_for_grid(grid, view, selected_sides, doc):
 
 def capture_temp_isolate_ids(view):
     if not view.IsTemporaryHideIsolateActive():
-        return []
+        return None
 
     try:
-        return list(view.GetTemporaryHideIsolateElementIds())
+        element_ids = list(view.GetTemporaryHideIsolateElementIds())
+        if not element_ids:
+            return None
+
+        sample_id = element_ids[0]
+        is_visible = view.IsElementVisibleInTemporaryViewMode(
+            TemporaryViewMode.TemporaryHideIsolate,
+            sample_id
+        )
+
+        return {
+            "mode": "isolate" if is_visible else "hide",
+            "element_ids": element_ids
+        }
     except Exception:
-        return []
+        return None
 
 
-def refresh_temp_isolate(uidoc, view, isolate_ids):
-    if not isolate_ids:
-        return False, "No isolated element ids found"
+def refresh_temp_isolate(uidoc, view, temp_state):
+    if not temp_state:
+        return False, "No temporary hide/isolate state found"
+
+    isolate_ids = temp_state["element_ids"]
+    mode = temp_state["mode"]
 
     id_list = List[ElementId]()
     for eid in isolate_ids:
@@ -190,11 +206,14 @@ def refresh_temp_isolate(uidoc, view, isolate_ids):
 
     uidoc.RefreshActiveView()
 
-    with revit.Transaction("Reapply Temporary Isolate"):
-        view.IsolateElementsTemporary(id_list)
+    with revit.Transaction("Reapply Temporary {0}".format(mode.title())):
+        if mode == "hide":
+            view.HideElementsTemporary(id_list)
+        else:
+            view.IsolateElementsTemporary(id_list)
 
     uidoc.RefreshActiveView()
-    return True, "Reapplied {0} isolated elements".format(id_list.Count)
+    return True, "Reapplied temporary {0} for {1} elements".format(mode, id_list.Count)
 
 
 def main():
@@ -226,7 +245,7 @@ def main():
     if selected_sides is None:
         forms.alert("Operation cancelled.", exitscript=True)
 
-    temp_isolate_ids = capture_temp_isolate_ids(active_view)
+    temp_isolate_state = capture_temp_isolate_ids(active_view)
 
     failed = 0
     errors = []
@@ -267,9 +286,9 @@ def main():
 
     temp_isolate_refreshed = False
     temp_isolate_message = ""
-    if temp_isolate_ids:
+    if temp_isolate_state:
         try:
-            temp_isolate_refreshed, temp_isolate_message = refresh_temp_isolate(uidoc, active_view, temp_isolate_ids)
+            temp_isolate_refreshed, temp_isolate_message = refresh_temp_isolate(uidoc, active_view, temp_isolate_state)
         except Exception as ex:
             temp_isolate_message = str(ex)
             errors.append("Temporary isolate refresh failed: {0}".format(str(ex)))
