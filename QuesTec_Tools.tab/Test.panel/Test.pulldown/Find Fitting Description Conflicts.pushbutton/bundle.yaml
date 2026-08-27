@@ -1,0 +1,11 @@
+tooltip:
+  en_us: Finds pipe fitting groups with the same material, fitting type, and size but different descriptions.
+
+title:
+  en_us: >-
+    Find Fitting
+
+    Description Conflicts
+authors:
+  - 'SVarner'
+min_revit_version: 2022

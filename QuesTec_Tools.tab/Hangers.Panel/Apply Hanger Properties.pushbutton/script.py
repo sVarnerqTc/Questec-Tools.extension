@@ -48,9 +48,6 @@ collector_pipes = FilteredElementCollector(doc, active_view.Id)\
     .WhereElementIsNotElementType()\
     .ToElements()
 
-# Add this after the pipe collector
-print("Number of pipes found: {}".format(len(list(collector_pipes))))
-
 collector_accessories = FilteredElementCollector(doc, active_view.Id)\
     .OfCategory(BuiltInCategory.OST_PipeAccessory)\
     .WhereElementIsNotElementType()\
@@ -510,4 +507,5 @@ results_message = '''Results:
     flagged_rod_diameter_count,
     flagged_pipe_standards_count
 )
-forms.alert(results_message)
+if len(error_hanger_ids) > 0 or len(hangers_no_pipes) > 0 or len(hangers_multiple_systems) > 0:
+    forms.alert(results_message)

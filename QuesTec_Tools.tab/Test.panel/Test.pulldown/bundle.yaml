@@ -18,8 +18,11 @@ layout:
   - Isolate Spool Rep Pipe
   - Open Family From Saved Loc
   - Place King Studs
+  - Place Couplings
+  - Change to Nipple
   - Points on Deck
   - Sync Wall Types
   - System Interferance check
   - Turn off Anno Scale
+  - Find Fitting Description Conflicts
   - Export NWC

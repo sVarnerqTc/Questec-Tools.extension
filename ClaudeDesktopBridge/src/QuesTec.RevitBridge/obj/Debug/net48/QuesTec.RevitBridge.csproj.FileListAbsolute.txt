@@ -1,0 +1,13 @@
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\bin\Debug\net48\QuesTec.RevitBridge.dll
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\bin\Debug\net48\QuesTec.RevitBridge.pdb
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\bin\Debug\net48\QuesTec.Bridge.Contracts.dll
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\bin\Debug\net48\QuesTec.Bridge.Contracts.pdb
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.csproj.AssemblyReference.cache
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.AssemblyInfoInputs.cache
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.AssemblyInfo.cs
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.csproj.CoreCompileInputs.cache
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.sourcelink.json
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec..50A5537B.Up2Date
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.dll
+C:\Users\stephen.varner.prv\OneDrive - QuesTec Constructors, Inc\Documents\GitHub\Questec-Tools.extension\ClaudeDesktopBridge\src\QuesTec.RevitBridge\obj\Debug\net48\QuesTec.RevitBridge.pdb

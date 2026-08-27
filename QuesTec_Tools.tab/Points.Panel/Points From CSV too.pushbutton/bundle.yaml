@@ -1,4 +1,8 @@
-title: Points From CSV
+title:
+  en_us: >-
+    Points
+  
+    From CSV
 tooltip: Import a CSV in the format Point#,X,Y,Z,Comments. The first row is included.
 author: Stephen Varner
 script: PointsFromCSV.py

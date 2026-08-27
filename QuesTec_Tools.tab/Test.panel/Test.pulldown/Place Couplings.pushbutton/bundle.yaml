@@ -1,0 +1,7 @@
+title:
+  en_us: Place Couplings
+tooltip:
+  en_us: Split target pipes in the active view at configured maximum lengths.
+authors:
+  - QuesTec BIM
+min_revit_version: 2022

@@ -1,3 +1,8 @@
+import os
+import tempfile
+from datetime import datetime
+from System.Collections.Generic import List
+
 from pyrevit import revit, DB, forms
 
 class FamilyLoadOptions(DB.IFamilyLoadOptions):
@@ -308,6 +313,115 @@ def add_or_update_shared_parameter(family_doc, shared_param, param_group, is_ins
             set_parameter_value(family_manager, family_param, value)
         return family_param
 
+def get_preferred_fallback_dir():
+    """Prefer the user's Downloads folder; fall back to temp if needed."""
+    user_profile = os.environ.get("USERPROFILE")
+    if user_profile:
+        downloads_dir = os.path.join(user_profile, "Downloads")
+        if os.path.isdir(downloads_dir):
+            return downloads_dir
+    return tempfile.gettempdir()
+
+def format_path_for_alert(path, max_segment_len=45):
+    """Split a long path into shorter lines so dialogs can show the full value."""
+    if not path:
+        return ""
+
+    parts = path.split(os.sep)
+    formatted_parts = []
+    for part in parts:
+        if len(part) <= max_segment_len:
+            formatted_parts.append(part)
+            continue
+
+        start = 0
+        while start < len(part):
+            formatted_parts.append(part[start:start + max_segment_len])
+            start += max_segment_len
+
+    return (os.sep + "\n").join(formatted_parts)
+
+def ensure_family_editable_for_reload(project_doc, family):
+    """Ensure the family element can be edited in a workshared project before reload."""
+    if not project_doc.IsWorkshared:
+        return True, None
+
+    checkout_status = DB.WorksharingUtils.GetCheckoutStatus(project_doc, family.Id)
+    if checkout_status == DB.CheckoutStatus.OwnedByCurrentUser:
+        return True, None
+
+    owner = None
+    try:
+        tooltip_info = DB.WorksharingUtils.GetWorksharingTooltipInfo(project_doc, family.Id)
+        owner = tooltip_info.Owner if tooltip_info else None
+    except Exception:
+        owner = None
+
+    status_label = str(checkout_status)
+    owner_line = "\nCurrent owner: {}".format(owner) if owner else ""
+    should_checkout = forms.alert(
+        "This project is workshared and the family is not currently editable for reload."
+        "\nStatus: {}{}\n\nDo you want to check it out now?".format(status_label, owner_line),
+        yes=True,
+        no=True,
+        exitscript=False
+    )
+
+    if not should_checkout:
+        return False, "Family reload cancelled: family was not checked out."
+
+    try:
+        element_ids = List[DB.ElementId]()
+        element_ids.Add(family.Id)
+        DB.WorksharingUtils.CheckoutElements(project_doc, element_ids)
+    except Exception as ex:
+        return False, "Failed to check out family for reload: {}".format(str(ex))
+
+    updated_status = DB.WorksharingUtils.GetCheckoutStatus(project_doc, family.Id)
+    if updated_status == DB.CheckoutStatus.OwnedByCurrentUser:
+        return True, None
+
+    return False, "Family is still not editable after checkout attempt. Status: {}".format(str(updated_status))
+
+def try_save_with_fallback(family_doc, family_name):
+    """Try Save first, then SaveAs to temp if needed."""
+    save_note = None
+    saved_path = None
+    used_fallback = False
+
+    try:
+        saved_path = family_doc.PathName
+        family_doc.Save()
+        return True, saved_path, save_note, used_fallback
+    except Exception as save_ex:
+        # Fall back to a writable temporary location if the original path is locked/read-only.
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_name = "".join(c if c.isalnum() or c in ("_", "-", " ") else "_" for c in family_name).strip()
+        if not safe_name:
+            safe_name = "Family"
+        fallback_filename = "{}_{}.rfa".format(safe_name, timestamp)
+        fallback_dir = get_preferred_fallback_dir()
+        fallback_path = os.path.join(fallback_dir, fallback_filename)
+
+        try:
+            save_as_options = DB.SaveAsOptions()
+            save_as_options.OverwriteExistingFile = True
+            family_doc.SaveAs(fallback_path, save_as_options)
+            display_path = format_path_for_alert(fallback_path)
+            save_note = (
+                "Could not save to original location. Saved a fallback copy to:\n{}\n\n"
+                "Original save error: {}"
+            ).format(display_path, str(save_ex))
+            used_fallback = True
+            return True, fallback_path, save_note, used_fallback
+        except Exception as save_as_ex:
+            save_note = (
+                "Unable to save the family file.\n"
+                "Save failed: {}\n"
+                "Save As fallback failed: {}"
+            ).format(str(save_ex), str(save_as_ex))
+            return False, None, save_note, used_fallback
+
 def main():
     family = prompt_for_family_instance()
     if not family:
@@ -371,26 +485,47 @@ def main():
             family_doc.Close(False)
             return
         
-        # Prompt user to save
+        save_note = None
+        saved_path = None
+        used_fallback = False
         should_save = forms.alert("Do you want to save the changes?", options=["Yes", "No"]) == "Yes"
         if should_save:
-            # Save the family document and get the file path
-            family_path = family_doc.PathName
-            family_doc.Save()
-            family_doc.Close(False)  # Close the document after saving
-            
-            # Create new transaction in the project document
-            with DB.Transaction(revit.doc, "Load Modified Family") as t2:
-                t2.Start()
-                load_options = FamilyLoadOptions()
-                if revit.doc.LoadFamily(family_path, load_options):
-                    forms.alert("Shared parameter added, family saved, and reloaded successfully.")
-                else:
-                    forms.alert("Failed to reload the family into the project.")
-                t2.Commit()
+            _, saved_path, save_note, used_fallback = try_save_with_fallback(family_doc, family.Name)
         else:
-            forms.alert("Changes were not saved.")
-            family_doc.Close(False)  # Close without saving if user chose not to save
+            save_note = "Changes were not saved to disk (by user choice)."
+
+        load_success = False
+        load_error = None
+        try:
+            can_reload, checkout_error = ensure_family_editable_for_reload(revit.doc, family)
+            if not can_reload:
+                load_error = checkout_error
+            else:
+                # Reload directly from the edited family document so project updates even if disk save fails.
+                load_options = FamilyLoadOptions()
+                load_success = family_doc.LoadFamily(revit.doc, load_options)
+        except Exception as load_ex:
+            load_error = str(load_ex)
+        finally:
+            family_doc.Close(False)
+
+        if load_success:
+            if save_note:
+                message = "Family reloaded successfully.\n\n{}".format(save_note)
+                if used_fallback and saved_path:
+                    message += "\n\nTemp save path:\n{}".format(format_path_for_alert(saved_path))
+                forms.alert(message)
+            else:
+                forms.alert("Shared parameter added, family saved, and reloaded successfully.")
+        else:
+            message = "Failed to reload the modified family into the project."
+            if load_error:
+                message += "\n\nReload error: {}".format(load_error)
+            if save_note:
+                message += "\n\n{}".format(save_note)
+            if used_fallback and saved_path:
+                message += "\n\nTemp save path:\n{}".format(format_path_for_alert(saved_path))
+            forms.alert(message)
             
     except Exception as ex:
         if t.HasStarted():

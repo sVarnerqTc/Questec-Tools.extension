@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "+6VEL2h4rRo=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\stephen.varner.prv\\OneDrive - QuesTec Constructors, Inc\\Documents\\GitHub\\Questec-Tools.extension\\ClaudeDesktopBridge\\src\\QuesTec.ClaudeBridge.Mcp\\QuesTec.ClaudeBridge.Mcp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.30\\microsoft.netcore.app.ref.8.0.30.nupkg.sha512",
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.30\\microsoft.windowsdesktop.app.ref.8.0.30.nupkg.sha512",
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.30\\microsoft.aspnetcore.app.ref.8.0.30.nupkg.sha512",
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.30\\microsoft.netcore.app.host.win-x64.8.0.30.nupkg.sha512"
+  ],
+  "logs": []
+}

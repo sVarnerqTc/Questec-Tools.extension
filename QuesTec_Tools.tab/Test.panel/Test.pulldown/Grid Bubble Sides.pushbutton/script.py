@@ -245,7 +245,7 @@ def main():
     if selected_sides is None:
         forms.alert("Operation cancelled.", exitscript=True)
 
-    temp_isolate_state = capture_temp_isolate_ids(active_view)
+    temp_isolate_ids = capture_temp_isolate_ids(active_view)
 
     failed = 0
     errors = []
@@ -286,9 +286,9 @@ def main():
 
     temp_isolate_refreshed = False
     temp_isolate_message = ""
-    if temp_isolate_state:
+    if temp_isolate_ids:
         try:
-            temp_isolate_refreshed, temp_isolate_message = refresh_temp_isolate(uidoc, active_view, temp_isolate_state)
+            temp_isolate_refreshed, temp_isolate_message = refresh_temp_isolate(uidoc, active_view, temp_isolate_ids)
         except Exception as ex:
             temp_isolate_message = str(ex)
             errors.append("Temporary isolate refresh failed: {0}".format(str(ex)))

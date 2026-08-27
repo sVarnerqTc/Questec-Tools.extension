@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "QuesTec.ClaudeBridge.Mcp/1.0.0": {
+        "dependencies": {
+          "QuesTec.Bridge.Contracts": "1.0.0"
+        },
+        "runtime": {
+          "QuesTec.ClaudeBridge.Mcp.dll": {}
+        }
+      },
+      "QuesTec.Bridge.Contracts/1.0.0": {
+        "runtime": {
+          "QuesTec.Bridge.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "QuesTec.ClaudeBridge.Mcp/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "QuesTec.Bridge.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

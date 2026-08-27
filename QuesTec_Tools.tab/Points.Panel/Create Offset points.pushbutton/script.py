@@ -33,6 +33,16 @@ def get_visible_grids(active_view):
     return list(collector)
 
 
+def get_selected_grids():
+    selected_ids = uidoc.Selection.GetElementIds()
+    grids = []
+    for element_id in selected_ids:
+        element = doc.GetElement(element_id)
+        if isinstance(element, Grid):
+            grids.append(element)
+    return grids
+
+
 def get_grid_intersections(grids):
     intersections = []
     seen_keys = set()
@@ -126,10 +136,26 @@ def main():
         TaskDialog.Show("Create Offset points", "Could not determine level from active plan view.")
         return
 
-    grids = get_visible_grids(active_view)
-    if len(grids) < 2:
-        TaskDialog.Show("Create Offset points", "Need at least two visible grids in the active view.")
-        return
+    selected_grids = get_selected_grids()
+    if selected_grids:
+        grids = selected_grids
+        if len(grids) < 2:
+            TaskDialog.Show("Create Offset points", "Need at least two selected grids.")
+            return
+    else:
+        use_visible = forms.alert(
+            "No grids are selected. Use all visible grids in the active view?",
+            title="Create Offset points",
+            yes=True,
+            no=True
+        )
+        if not use_visible:
+            return
+
+        grids = get_visible_grids(active_view)
+        if len(grids) < 2:
+            TaskDialog.Show("Create Offset points", "Need at least two visible grids in the active view.")
+            return
 
     intersections = get_grid_intersections(grids)
     if not intersections:

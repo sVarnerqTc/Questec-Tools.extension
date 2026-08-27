@@ -1,0 +1,10 @@
+tooltip:
+  en_us: Pre-select elements and run to isolate pipe accessories in the active view with matching 'Upper Attachment' values.
+
+title:
+  en_us: >-
+    By Upper Attachment
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

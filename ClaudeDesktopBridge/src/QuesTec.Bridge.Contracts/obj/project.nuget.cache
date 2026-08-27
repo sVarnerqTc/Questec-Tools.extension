@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "oArA3fgsrdY=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\stephen.varner.prv\\OneDrive - QuesTec Constructors, Inc\\Documents\\GitHub\\Questec-Tools.extension\\ClaudeDesktopBridge\\src\\QuesTec.Bridge.Contracts\\QuesTec.Bridge.Contracts.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

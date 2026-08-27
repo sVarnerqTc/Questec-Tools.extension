@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "W7kZFwCExcE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\stephen.varner.prv\\OneDrive - QuesTec Constructors, Inc\\Documents\\GitHub\\Questec-Tools.extension\\ClaudeDesktopBridge\\src\\QuesTec.RevitBridge\\QuesTec.RevitBridge.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "C:\\Users\\stephen.varner.prv\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net48\\1.0.3\\microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

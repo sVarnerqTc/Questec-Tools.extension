@@ -1,5 +1,72 @@
 from pyrevit import revit, DB, script, forms
 
+
+def _is_nonzero(value, tol=1e-9):
+    return abs(value) > tol
+
+
+def _is_select_upper_attachment_six(element):
+    """Return True when Select Upper Attachment resolves to value 6."""
+    param = element.LookupParameter("Select Upper Attachment")
+    if not param or not param.HasValue:
+        return False
+
+    st = param.StorageType
+
+    if st == DB.StorageType.Integer:
+        return param.AsInteger() == 6
+
+    if st == DB.StorageType.Double:
+        return abs(param.AsDouble() - 6.0) < 1e-9
+
+    if st == DB.StorageType.ElementId:
+        elem_id = param.AsElementId()
+        return elem_id and elem_id.IntegerValue == 6
+
+    for raw_value in [param.AsValueString(), param.AsString()]:
+        if raw_value:
+            text = raw_value.strip()
+            try:
+                return abs(float(text) - 6.0) < 1e-9
+            except Exception:
+                if text == "6":
+                    return True
+
+    return False
+
+
+def prompt_reset_added_rod_extension(doc, elements):
+    """Optionally reset Added Rod Extension to 0 when non-zero values are found."""
+    elements_with_nonzero = []
+    for element in elements:
+        param = element.LookupParameter("Added Rod Extension")
+        if param and param.HasValue and not param.IsReadOnly and param.StorageType == DB.StorageType.Double:
+            if _is_nonzero(param.AsDouble()):
+                elements_with_nonzero.append((element, param))
+
+    if not elements_with_nonzero:
+        return
+
+    should_reset = forms.alert(
+        "Found {0} hanger(s) with non-zero 'Added Rod Extension'.\n\nDo you want to set 'Added Rod Extension' to 0 before continuing?".format(len(elements_with_nonzero)),
+        yes=True,
+        no=True,
+        exitscript=False
+    )
+
+    if not should_reset:
+        return
+
+    t = DB.Transaction(doc, "Reset Added Rod Extension")
+    t.Start()
+    try:
+        for _, param in elements_with_nonzero:
+            param.Set(0.0)
+        t.Commit()
+    except Exception:
+        t.RollBack()
+        raise
+
 def setup_output():
     """Initialize and configure output window"""
     output = script.get_output()
@@ -19,7 +86,7 @@ def get_active_document_and_view():
     return doc, active_view
 
 def get_trapeze_reference():
-    """Get reference elevation from trapeze hangers"""
+    """Get reference elevation from selected trapezes, or all in view if none selected."""
     doc = revit.doc
     active_view = doc.ActiveView
     
@@ -30,7 +97,7 @@ def get_trapeze_reference():
                   .ToElements())
     
     # Find all trapezes and their elevations
-    trapezes = []
+    all_trapezes = []
     elevations = set()
     
     for acc in accessories:
@@ -39,8 +106,21 @@ def get_trapeze_reference():
         if "trapeze" in family_name or "unistrut_spanner" in family_name:
             location = acc.Location
             if location:
-                trapezes.append(acc)
-                elevations.add(round(location.Point.Z, 4))  # Round to 4 decimal places
+                all_trapezes.append(acc)
+
+    if not all_trapezes:
+        forms.alert("No trapeze hangers found in view", exitscript=True)
+        return None, None
+
+    selected_ids = set(revit.uidoc.Selection.GetElementIds())
+    selected_trapezes = [trap for trap in all_trapezes if trap.Id in selected_ids]
+
+    trapezes = selected_trapezes if selected_trapezes else all_trapezes
+
+    for trap in trapezes:
+        location = trap.Location
+        if location:
+            elevations.add(round(location.Point.Z, 4))  # Round to 4 decimal places
     
     if not trapezes:
         forms.alert("No trapeze hangers found in view", exitscript=True)
@@ -65,18 +145,46 @@ def get_reference_elevation():
     return elevation
 
 def collect_pipe_accessories(doc, view_id):
-    """Collect all pipe accessories from the active view"""
-    output = script.get_output()  # Debug output
-    
+    """Collect selected hangers, or optionally all hangers in active view."""
     collector = (DB.FilteredElementCollector(doc, view_id)
                 .OfCategory(DB.BuiltInCategory.OST_PipeAccessory)
                 .WhereElementIsNotElementType())
-    
-    # Get all elements
-    all_elements = collector.ToElements()
-    # output.print_md("Total accessories found: {}".format(len(all_elements)))
-    
-    return all_elements
+
+    all_elements = list(collector.ToElements())
+    visible_hangers = [acc for acc in all_elements if acc.LookupParameter("Rod Extn Above")]
+
+    if not visible_hangers:
+        forms.alert("No hangers with 'Rod Extn Above' were found in the active view.", exitscript=True)
+        return []
+
+    selected_ids = set(revit.uidoc.Selection.GetElementIds())
+    selected_hangers = [hanger for hanger in visible_hangers if hanger.Id in selected_ids]
+
+    if selected_hangers:
+        target_hangers = selected_hangers
+    else:
+        process_all = forms.alert(
+            "No hangers are selected.\n\nDo you want to process all {0} hangers in the active view?".format(len(visible_hangers)),
+            yes=True,
+            no=True,
+            exitscript=False
+        )
+
+        if process_all:
+            target_hangers = visible_hangers
+        else:
+            forms.alert("No hangers selected. Script cancelled.", exitscript=True)
+            return []
+
+    filtered_hangers = [h for h in target_hangers if _is_select_upper_attachment_six(h)]
+    if not filtered_hangers:
+        forms.alert(
+            "No selected/in-view hangers had 'Select Upper Attachment' set to 6.",
+            exitscript=True
+        )
+        return []
+
+    return filtered_hangers
 
 def process_accessories(doc, accessories):
     """Find accessories with Rod Extn Above parameter"""
@@ -199,6 +307,7 @@ def main():
         doc, active_view = get_active_document_and_view()
         reference = get_reference_elevation()
         accessories = collect_pipe_accessories(doc, active_view.Id)
+        prompt_reset_added_rod_extension(doc, accessories)
         processed_accessories = process_accessories(doc, accessories)
         
         # Calculate elevation differences

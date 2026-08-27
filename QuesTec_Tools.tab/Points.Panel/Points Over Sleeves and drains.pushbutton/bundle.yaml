@@ -1,0 +1,13 @@
+tooltip:
+  en_us: Place point families over active-view drains and sleeves, with sequential Mark values by Type Mark
+
+title:
+  en_us: >-
+    Points Over
+
+    Sleeves and Drains
+authors:
+  - 'SVarner'
+icon: icon.png
+help_url:
+min_revit_version: 2019

@@ -1,0 +1,34 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuesTec.Bridge.Contracts", "src\QuesTec.Bridge.Contracts\QuesTec.Bridge.Contracts.csproj", "{7B2A7D73-7D5B-4D5F-8A32-6A1B3AC8D7F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuesTec.RevitBridge", "src\QuesTec.RevitBridge\QuesTec.RevitBridge.csproj", "{0F1A2A2A-3D8C-4A0A-9F54-4F2F6C6A94B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuesTec.ClaudeBridge.Mcp", "src\QuesTec.ClaudeBridge.Mcp\QuesTec.ClaudeBridge.Mcp.csproj", "{5D7B2BB3-1D5F-4D23-8A83-15C2C3B7E6F4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B2A7D73-7D5B-4D5F-8A32-6A1B3AC8D7F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B2A7D73-7D5B-4D5F-8A32-6A1B3AC8D7F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B2A7D73-7D5B-4D5F-8A32-6A1B3AC8D7F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B2A7D73-7D5B-4D5F-8A32-6A1B3AC8D7F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F1A2A2A-3D8C-4A0A-9F54-4F2F6C6A94B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F1A2A2A-3D8C-4A0A-9F54-4F2F6C6A94B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F1A2A2A-3D8C-4A0A-9F54-4F2F6C6A94B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F1A2A2A-3D8C-4A0A-9F54-4F2F6C6A94B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D7B2BB3-1D5F-4D23-8A83-15C2C3B7E6F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D7B2BB3-1D5F-4D23-8A83-15C2C3B7E6F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D7B2BB3-1D5F-4D23-8A83-15C2C3B7E6F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D7B2BB3-1D5F-4D23-8A83-15C2C3B7E6F4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
