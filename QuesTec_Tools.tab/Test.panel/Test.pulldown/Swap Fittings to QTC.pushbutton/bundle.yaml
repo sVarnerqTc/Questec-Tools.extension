@@ -1,0 +1,10 @@
+title:
+  en_us: >-
+    Swap Fittings
+
+    to QTC
+tooltip:
+  en_us: Swap selected fittings to their best matching QTC family type and report connection status.
+authors:
+  - QuesTec
+min_revit_version: 2022

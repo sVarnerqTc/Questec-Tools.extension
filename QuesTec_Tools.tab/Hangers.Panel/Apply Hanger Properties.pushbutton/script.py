@@ -3,7 +3,7 @@ clr.AddReference('RevitAPI')
 clr.AddReference('RevitAPIUI')
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import *
-from pyrevit import revit, DB, forms
+from pyrevit import revit, DB, forms, script
 from System.Collections.Generic import List
 import math
 
@@ -101,6 +101,18 @@ def get_pipe_properties(pipe):
     size = pipe.LookupParameter('Size').AsString()
     system_type = pipe.LookupParameter('System Type').AsString()
     return size, system_type
+
+def get_reference_level_info(element, parameter_name):
+    level_param = element.LookupParameter(parameter_name)
+    if not level_param or level_param.StorageType != StorageType.ElementId or not level_param.HasValue:
+        return None, "{} not found or has no value".format(parameter_name)
+
+    level_id = level_param.AsElementId()
+    level = doc.GetElement(level_id)
+    if level is None:
+        return None, '{} could not be resolved'.format(parameter_name)
+
+    return level_id, level.Name
 
 def get_centerline_elevation_at_hanger_xy(pipe_line, hanger_location):
     start_point = pipe_line.GetEndPoint(0)
@@ -271,6 +283,7 @@ def is_script_error_message(message):
 
     static_messages = set([
         'Hanger elevation does not match pipe centerline',
+        'Pipe and hanger reference levels do not match',
         'Hanger size too small for pipe + insulation',
         'Rod diameter does not match standards table',
         'Pipe size exceeds standards table',
@@ -329,10 +342,19 @@ def get_expected_rod_diameter(pipe_size_feet):
 
 elevation_tolerance = 1.0 / 192.0  # 1/16 in in internal feet
 mismatched_hanger_targets = {}
+reference_level_mismatches = []
+represented_levels = set()
 rod_mismatch_targets = {}
 pipe_size_exceeds_standards = set()
 rod_diameter_tolerance = 1e-6
 for hanger, pipe, multiple_same_systems, related_pipes in hangers_with_pipes:
+    hanger_level_id, hanger_level_name = get_reference_level_info(hanger, 'Level')
+    pipe_level_id, pipe_level_name = get_reference_level_info(pipe, 'Reference Level')
+    represented_levels.add(hanger_level_name)
+    represented_levels.add(pipe_level_name)
+    if hanger_level_id is None or pipe_level_id is None or hanger_level_id.IntegerValue != pipe_level_id.IntegerValue:
+        reference_level_mismatches.append((hanger, pipe, hanger_level_name, pipe_level_name))
+
     hanger_location = hanger.Location.Point
     centerline_z_at_hanger = get_centerline_elevation_at_hanger_xy(pipe.Location.Curve, hanger_location)
     if abs(hanger_location.Z - centerline_z_at_hanger) > elevation_tolerance:
@@ -382,6 +404,7 @@ updated_hanger_elevation_count = 0
 flagged_hanger_elevation_count = 0
 flagged_hanger_size_count = 0
 updated_rod_diameter_count = 0
+flagged_reference_level_count = 0
 flagged_rod_diameter_count = 0
 flagged_pipe_standards_count = 0
 one_inch_in_feet = 1.0 / 12.0
@@ -396,6 +419,7 @@ with revit.Transaction('Update Hanger Parameters'):
         # Get hanger XY location
         hanger_location = hanger.Location.Point
         has_unresolved_elevation_mismatch = False
+        has_reference_level_mismatch = False
         has_hanger_size_mismatch = False
         has_rod_diameter_mismatch = False
         has_pipe_size_standards_warning = False
@@ -417,6 +441,14 @@ with revit.Transaction('Update Hanger Parameters'):
         
         # Get pipe data at hanger location
         pipe_data = get_pipe_data_at_hanger(pipe, hanger_location)
+
+        for mismatch_hanger, mismatch_pipe, hanger_level_name, pipe_level_name in reference_level_mismatches:
+            if mismatch_hanger.Id.IntegerValue == hanger.Id.IntegerValue and mismatch_pipe.Id.IntegerValue == pipe.Id.IntegerValue:
+                set_error_message(hanger, 'Pipe and hanger reference levels do not match')
+                has_reference_level_mismatch = True
+                flagged_reference_level_count += 1
+                track_error_elements(hanger, related_pipes)
+                break
         
         # Update hanger parameters safely
         updates_succeeded = True
@@ -461,7 +493,7 @@ with revit.Transaction('Update Hanger Parameters'):
         if not updates_succeeded:
             track_error_elements(hanger, related_pipes)
 
-        if updates_succeeded and (not multiple_same_systems) and (not has_unresolved_elevation_mismatch) and (not has_hanger_size_mismatch) and (not has_rod_diameter_mismatch) and (not has_pipe_size_standards_warning):
+        if updates_succeeded and (not multiple_same_systems) and (not has_unresolved_elevation_mismatch) and (not has_reference_level_mismatch) and (not has_hanger_size_mismatch) and (not has_rod_diameter_mismatch) and (not has_pipe_size_standards_warning):
             clear_script_error_message_if_present(hanger)
 
         if multiple_same_systems:
@@ -493,19 +525,42 @@ results_message = '''Results:
 {2} hangers with conflicting pipes
 {3} hanger elevations updated to centerline
 {4} hangers flagged for elevation mismatch
-{5} hangers flagged for undersized support
-{6} rod diameters updated to standards
-{7} hangers flagged for rod diameter mismatch
-{8} hangers flagged for pipe size above standards table'''.format(
+{5} hangers flagged for reference level mismatch
+{6} hangers flagged for undersized support
+{7} rod diameters updated to standards
+{8} hangers flagged for rod diameter mismatch
+{9} hangers flagged for pipe size above standards table'''.format(
     len(hangers_with_pipes),
     len(hangers_no_pipes),
     len(hangers_multiple_systems),
     updated_hanger_elevation_count,
     flagged_hanger_elevation_count,
+    flagged_reference_level_count,
     flagged_hanger_size_count,
     updated_rod_diameter_count,
     flagged_rod_diameter_count,
     flagged_pipe_standards_count
 )
-if len(error_hanger_ids) > 0 or len(hangers_no_pipes) > 0 or len(hangers_multiple_systems) > 0:
+output = script.get_output()
+output.set_height(800)
+output.print_md('## Reference Levels Represented')
+if represented_levels:
+    for level_name in sorted(represented_levels):
+        output.print_md('* {}'.format(level_name))
+else:
+    output.print_md('No matched hanger and pipe levels were found.')
+
+if reference_level_mismatches:
+    output.print_md('\n## Reference Level Mismatches')
+    for hanger, pipe, hanger_level_name, pipe_level_name in reference_level_mismatches:
+        output.print_md(
+            '* Hanger {}: hanger level = **{}**, pipe {} level = **{}**'.format(
+                hanger.Id.IntegerValue,
+                hanger_level_name,
+                pipe.Id.IntegerValue,
+                pipe_level_name
+            )
+        )
+
+if len(error_hanger_ids) > 0 or len(hangers_no_pipes) > 0 or len(hangers_multiple_systems) > 0 or len(reference_level_mismatches) > 0:
     forms.alert(results_message)
