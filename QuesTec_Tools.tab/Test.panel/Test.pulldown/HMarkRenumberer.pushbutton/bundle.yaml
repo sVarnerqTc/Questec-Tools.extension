@@ -1,0 +1,7 @@
+title:
+  en_us: HMark Renumberer
+tooltip:
+  en_us: Renumbers selected elements with sequential H-mark values based on the highest existing H mark in the project and saves the mapping for restoration.
+authors:
+  - SVarner
+min_revit_version: 2022

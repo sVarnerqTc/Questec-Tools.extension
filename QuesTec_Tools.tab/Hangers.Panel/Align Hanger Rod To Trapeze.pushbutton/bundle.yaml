@@ -1,5 +1,5 @@
 tooltip:
-  en_us: Isolate trapeze and any hangers that belong to it and run. Aligns top of rod to the trapeze. Can do multiple trapezes of the same elevation.
+  en_us: Finds trapeze hangers in the active view, validates the selected or in-view trapeze elevation, and aligns the top of hanger rods to the trapeze. Works for hangers with Select Upper Attachment = 6 and can reset non-zero Added Rod Extension values when prompted.
 
 
 title:

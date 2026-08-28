@@ -1,0 +1,7 @@
+title:
+  en_us: System Interference Check
+tooltip:
+  en_us: Checks active-view piping and accessory elements for geometric clashes between different system types and reports where they intersect.
+authors:
+  - Copilot
+min_revit_version: 2022

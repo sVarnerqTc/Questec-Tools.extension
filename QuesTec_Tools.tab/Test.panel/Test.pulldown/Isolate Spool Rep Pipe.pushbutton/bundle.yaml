@@ -1,0 +1,7 @@
+title:
+  en_us: Isolate Spool Rep Pipe
+tooltip:
+  en_us: Isolates one representative pipe or fitting per spool tag in the active view so each spool can be reviewed quickly.
+authors:
+  - SVarner
+min_revit_version: 2022

@@ -1,0 +1,7 @@
+title:
+  en_us: Place King Studs
+tooltip:
+  en_us: Places king studs for doors from the selected linked model based on door width and orientation, locating one stud on each side of the opening.
+authors:
+  - SVarner
+min_revit_version: 2022

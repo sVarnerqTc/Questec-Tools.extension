@@ -1,0 +1,7 @@
+title:
+  en_us: Open Family From Saved Loc
+tooltip:
+  en_us: Opens the selected family from its saved location on disk so the source family file can be edited without navigating through the project tree.
+authors:
+  - SVarner
+min_revit_version: 2022

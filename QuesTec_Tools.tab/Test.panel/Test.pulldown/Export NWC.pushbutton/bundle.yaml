@@ -1,0 +1,7 @@
+title:
+  en_us: Export NWC
+tooltip:
+  en_us: Exports selected 3D views to NWC using saved project settings. Shift+Click to configure the export setup; Ctrl+Click to review the current configuration.
+authors:
+  - SVarner
+min_revit_version: 2022

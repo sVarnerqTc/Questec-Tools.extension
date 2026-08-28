@@ -1,0 +1,7 @@
+title:
+  en_us: Hide Unavailable
+tooltip:
+  en_us: Temporarily hides in-view elements that are currently checked out or borrowed by another user so unavailable work is kept out of the way.
+authors:
+  - SVarner
+min_revit_version: 2022

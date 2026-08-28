@@ -1,0 +1,7 @@
+title:
+  en_us: Create Sheets
+tooltip:
+  en_us: Creates a dependent plan view for each selected scope box and places it on a new sheet using the chosen title block. Shift+Click to adjust the default horizontal viewport offset.
+authors:
+  - SVarner
+min_revit_version: 2022

@@ -1,0 +1,7 @@
+title:
+  en_us: Sync Wall Types
+tooltip:
+  en_us: Copies wall types from the first linked model into the host project so the referenced wall assembly names and structure stay aligned.
+authors:
+  - SVarner
+min_revit_version: 2022

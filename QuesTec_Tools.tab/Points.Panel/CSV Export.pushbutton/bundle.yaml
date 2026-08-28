@@ -1,0 +1,7 @@
+title:
+  en_us: CSV Export
+tooltip:
+  en_us: Exports selected elements to a CSV file with Name, X, Y, Z, and Comments values using a chosen folder and file name.
+authors:
+  - QuesTec Tools
+min_revit_version: 2022
