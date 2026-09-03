@@ -29,6 +29,9 @@ doc = revit.doc
 uidoc = revit.uidoc
 logger = script.get_logger()
 
+# Temporary test switch: re-enable to prevent moving fittings between non-axial pipes.
+ENFORCE_SAME_AXIS_FOR_FITTING_MOVE = False
+
 
 class PipeSelectionFilter(ISelectionFilter):
     def AllowElement(self, elem):
@@ -44,7 +47,11 @@ class PipeFittingSelectionFilter(ISelectionFilter):
             return False
         if elem.Category is None:
             return False
-        return elem.Category.Id.IntegerValue == int(BuiltInCategory.OST_PipeFitting)
+        category_id = elem.Category.Id.IntegerValue
+        return category_id in (
+            int(BuiltInCategory.OST_PipeFitting),
+            int(BuiltInCategory.OST_PipeAccessory),
+        )
 
     def AllowReference(self, reference, position):
         return True
@@ -276,6 +283,18 @@ def get_pipe_diameter(pipe):
         return param.AsDouble()
 
     return None
+
+
+def get_piping_system_type_id(elem):
+    param = elem.get_Parameter(BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM)
+    if param is None or not param.HasValue:
+        return ElementId.InvalidElementId
+
+    system_type_id = param.AsElementId()
+    if system_type_id is None:
+        return ElementId.InvalidElementId
+
+    return system_type_id
 
 
 def get_farthest_connector_pair(connectors):
@@ -532,10 +551,12 @@ def main():
         return
 
     target_radius = pipe_diameter / 2.0
+    expected_system_type_id = get_piping_system_type_id(pipe_to_replace)
 
     connected_connector_count = get_connected_connector_count(fitting_to_move)
     should_move_fitting = True
     move_skip_reason = None
+    reconnect_skip_reason = None
 
     if connected_connector_count > 2:
         should_move_fitting = False
@@ -543,7 +564,7 @@ def main():
     elif len(connected_pipe_ids) == 2:
         connected_pipe_elems = [doc.GetElement(ElementId(pid)) for pid in connected_pipe_ids]
         connected_pipe_elems = [p for p in connected_pipe_elems if p is not None and isinstance(p, Pipe)]
-        if len(connected_pipe_elems) == 2:
+        if len(connected_pipe_elems) == 2 and ENFORCE_SAME_AXIS_FOR_FITTING_MOVE:
             if not pipes_on_same_axis_at_fitting(
                 connected_pipe_elems[0],
                 connected_pipe_elems[1],
@@ -580,6 +601,7 @@ def main():
         )
 
         connect_if_needed(start_connector, updated_remote_connector)
+        doc.Regenerate()
 
         fitting_after_delete = doc.GetElement(fitting_to_move.Id)
         if fitting_after_delete is None:
@@ -628,13 +650,34 @@ def main():
             if fitting_open_connector is None:
                 raise Exception('Open connector not found at nipple end after moving fitting.')
 
-            connect_if_needed(fitting_open_connector, end_connector)
+            nipple_system_type_id = get_piping_system_type_id(nipple_instance)
+            if (
+                expected_system_type_id != ElementId.InvalidElementId
+                and nipple_system_type_id == expected_system_type_id
+            ):
+                connect_if_needed(fitting_open_connector, end_connector)
+            else:
+                reconnect_skip_reason = (
+                    'Fitting was moved but not reconnected because the nipple did not resolve '
+                    'to the selected pipe system type.'
+                )
         elif fitting_open_connector.Origin.DistanceTo(end_connector.Origin) < 1e-4:
-            connect_if_needed(fitting_open_connector, end_connector)
+            nipple_system_type_id = get_piping_system_type_id(nipple_instance)
+            if (
+                expected_system_type_id != ElementId.InvalidElementId
+                and nipple_system_type_id == expected_system_type_id
+            ):
+                connect_if_needed(fitting_open_connector, end_connector)
+            else:
+                reconnect_skip_reason = (
+                    'Fitting was not reconnected because the nipple did not resolve '
+                    'to the selected pipe system type.'
+                )
 
-    if move_skip_reason:
+    messages = [message for message in (move_skip_reason, reconnect_skip_reason) if message]
+    if messages:
         forms.alert(
-            'Pipe replaced with selected nipple successfully.\n\n{}'.format(move_skip_reason),
+            'Pipe replaced with selected nipple successfully.\n\n{}'.format('\n'.join(messages)),
             title='Change to Nipple',
         )
     else:
