@@ -30,7 +30,7 @@ REQUIRED_COLUMNS = ["TIG Weld Number", "Date", "Time", "Welders Signature", "Loc
 
 # Excel "Location of Weld" values mapped to the Revit "Orbital S/N" parameter value.
 ORBITAL_SN_BY_LOCATION = {
-    "clean room": "Machine 1",
+    "clean room": "23100024",
     "field machine 2": "15080015",
     "field machine 3": "14080220",
 }
