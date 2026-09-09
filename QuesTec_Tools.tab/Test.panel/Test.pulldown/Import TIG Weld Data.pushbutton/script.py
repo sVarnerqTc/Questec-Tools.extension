@@ -77,18 +77,32 @@ def read_excel_rows(excel_path):
         last_row = int(used.Row + used.Rows.Count - 1)
         last_col = int(used.Column + used.Columns.Count - 1)
 
+        # Headers may not be on row 1, so scan down until a row has all required columns.
         header_col_by_name = {}
-        for col in range(1, last_col + 1):
-            header = normalize(sheet.Cells(1, col).Text)
-            if header:
-                header_col_by_name[header.lower()] = col
+        missing_columns = REQUIRED_COLUMNS
+        header_row = 1
+        max_header_row = min(last_row, 20)
+        while header_row <= max_header_row:
+            candidate_headers = {}
+            for col in range(1, last_col + 1):
+                header = normalize(sheet.Cells(header_row, col).Text)
+                if header:
+                    candidate_headers[header.lower()] = col
 
-        missing_columns = [name for name in REQUIRED_COLUMNS if name.lower() not in header_col_by_name]
+            candidate_missing = [name for name in REQUIRED_COLUMNS if name.lower() not in candidate_headers]
+            if not candidate_missing:
+                header_col_by_name = candidate_headers
+                missing_columns = []
+                break
+
+            missing_columns = candidate_missing
+            header_row += 1
+
         if missing_columns:
             return [], missing_columns
 
         rows = []
-        for row in range(2, last_row + 1):
+        for row in range(header_row + 1, last_row + 1):
             row_data = {}
             for name in REQUIRED_COLUMNS:
                 col = header_col_by_name[name.lower()]
