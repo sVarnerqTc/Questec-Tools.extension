@@ -1,0 +1,7 @@
+title:
+  en_us: Import TIG Weld Data
+tooltip:
+  en_us: Match pipe fitting Comments in the active view to a "TIG Weld Number" column in an Excel file and write Date, Time, Welder ID, and Orbital S/N to matching fittings.
+authors:
+  - QuesTec BIM
+min_revit_version: 2022
