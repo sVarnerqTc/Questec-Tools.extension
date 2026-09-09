@@ -10,6 +10,8 @@ Workflow:
    parameters on that fitting.
 """
 
+import re
+
 import clr
 
 clr.AddReference("RevitAPI")
@@ -125,6 +127,19 @@ def read_excel_rows(excel_path):
         release_com(excel_app)
 
 
+def build_weld_number_pattern(weld_number):
+    # Comments look like "Weld 123", so match the number as a whole token anywhere in the string.
+    return re.compile(r"(?<![A-Za-z0-9])" + re.escape(weld_number.lower()) + r"(?![A-Za-z0-9])")
+
+
+def find_matching_row(comments, weld_patterns):
+    comments_lower = comments.lower()
+    for weld_number, pattern, row_data in weld_patterns:
+        if pattern.search(comments_lower):
+            return row_data
+    return None
+
+
 def get_comments(fitting):
     param = fitting.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS)
     if param is None:
@@ -153,9 +168,10 @@ def main():
             exitscript=True,
         )
 
-    rows_by_weld_number = {}
-    for row_data in rows:
-        rows_by_weld_number[row_data["TIG Weld Number"].lower()] = row_data
+    weld_patterns = [
+        (row_data["TIG Weld Number"], build_weld_number_pattern(row_data["TIG Weld Number"]), row_data)
+        for row_data in rows
+    ]
 
     fittings = (
         FilteredElementCollector(doc, active_view.Id)
@@ -176,7 +192,7 @@ def main():
             if not comments:
                 continue
 
-            row_data = rows_by_weld_number.get(comments.lower())
+            row_data = find_matching_row(comments, weld_patterns)
             if row_data is None:
                 continue
 
