@@ -3,7 +3,12 @@
 
 import re
 
-from Autodesk.Revit.DB import BuiltInCategory, FamilySymbol, FilteredElementCollector
+from Autodesk.Revit.DB import (
+    BuiltInCategory,
+    BuiltInParameter,
+    FamilySymbol,
+    FilteredElementCollector,
+)
 from pyrevit import forms, revit, script
 
 
@@ -103,14 +108,14 @@ def best_qtc_match(source_family_name, qtc_family_map):
     return best_name, best_score
 
 
-def choose_qtc_family(source_family_name, qtc_family_map, best_score):
+def choose_qtc_family(source_family_name, source_type_name, qtc_family_map, best_score):
     """Let the user select a QTC family when fuzzy matching is inconclusive."""
     if not qtc_family_map:
         return None
     choices = [SKIP_FITTING_OPTION]
     choices.extend(sorted(qtc_family_map.keys(), key=lambda name: name.lower()))
-    title = "Choose QTC Family (best score {:.2f})\n{}".format(
-        best_score, source_family_name
+    title = "Replacing family type: {}\nFamily: {}\nChoose QTC Family (best score {:.2f})".format(
+        source_type_name, source_family_name, best_score
     )
     return forms.SelectFromList.show(
         choices,
@@ -226,6 +231,7 @@ def main():
 
     report = []
     qtc_families_by_category = {}
+    user_family_choices = {}
     with revit.Transaction("Swap fittings to QTC type"):
         for element_id in selected_ids:
             element = doc.GetElement(element_id)
@@ -251,6 +257,13 @@ def main():
                 continue
 
             source_family_name = source_symbol.Family.Name
+            source_type_parameter = source_symbol.get_Parameter(
+                BuiltInParameter.SYMBOL_NAME_PARAM
+            )
+            source_type_name = (
+                source_type_parameter.AsString()
+                if source_type_parameter else source_family_name
+            )
             if QTC_MARKER in source_family_name.lower():
                 report.append((element_id.IntegerValue, source_family_name, "SKIPPED", "already a QTC fitting"))
                 continue
@@ -263,7 +276,14 @@ def main():
             qtc_family_map = qtc_families_by_category[category_key]
             match_name, score = best_qtc_match(source_family_name, qtc_family_map)
             if not match_name or score < MIN_MATCH_SCORE:
-                match_name = choose_qtc_family(source_family_name, qtc_family_map, score)
+                choice_key = (category_key, source_symbol.Id.IntegerValue)
+                if choice_key in user_family_choices:
+                    match_name = user_family_choices[choice_key]
+                else:
+                    match_name = choose_qtc_family(
+                        source_family_name, source_type_name, qtc_family_map, score
+                    )
+                    user_family_choices[choice_key] = match_name
                 if not match_name or match_name == SKIP_FITTING_OPTION:
                     report.append((
                         element_id.IntegerValue,

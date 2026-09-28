@@ -96,6 +96,18 @@ def get_end_connectors(elem):
     return [c for c in get_connectors(elem) if c.ConnectorType == ConnectorType.End]
 
 
+def get_physical_connectors(elem):
+    physical = []
+    for connector in get_connectors(elem):
+        try:
+            connector.Origin
+            physical.append(connector)
+        except Exception:
+            # Logical connectors do not expose Origin and cannot be used for geometry.
+            continue
+    return physical
+
+
 def get_other_owner_connector(connector):
     for ref in connector.AllRefs:
         if ref.Owner.Id != connector.Owner.Id:
@@ -221,15 +233,18 @@ def get_nipple_choices():
         .ToElements()
     )
 
-    sample_by_type = {}
+    sample_ids_by_type = {}
     count_by_type = {}
     for fitting in fittings:
         if not isinstance(fitting, FamilyInstance):
             continue
         type_id = fitting.GetTypeId().IntegerValue
         count_by_type[type_id] = count_by_type.get(type_id, 0) + 1
-        if type_id not in sample_by_type:
-            sample_by_type[type_id] = fitting.Id
+        # Keep every placed instance of this type, not just the first one found.
+        # create_nipple_instance() needs the full list so it can prefer a sample
+        # that already lives on the same piping system as the pipe being replaced,
+        # instead of blindly copying whichever instance happens to be first.
+        sample_ids_by_type.setdefault(type_id, []).append(fitting.Id)
 
     fitting_types = (
         FilteredElementCollector(doc)
@@ -262,7 +277,7 @@ def get_nipple_choices():
                 placement_label,
             ),
             'symbol_id': symbol.Id,
-            'sample_instance_id': sample_by_type.get(symbol_id),
+            'sample_instance_ids': sample_ids_by_type.get(symbol_id, []),
             'family_name': family_name,
             'length_in': length_in,
             'placed_count': placed_count,
@@ -318,7 +333,7 @@ def get_farthest_connector_pair(connectors):
 def get_connector_near_point(elem, point, only_open=False):
     nearest = None
     nearest_distance = None
-    for conn in get_connectors(elem):
+    for conn in get_physical_connectors(elem):
         if only_open and conn.IsConnected:
             continue
         dist = conn.Origin.DistanceTo(point)
@@ -326,6 +341,37 @@ def get_connector_near_point(elem, point, only_open=False):
             nearest = conn
             nearest_distance = dist
     return nearest
+
+
+def get_connector_near_point_excluding(elem, point, excluded_connector):
+    # NOTE: Connector wrapper objects returned by repeated .Connectors
+    # enumeration are not guaranteed to be the same Python object each time
+    # (confirmed live: pulling a connector list twice in a row yields
+    # objects that are never `is`-equal even for the same physical
+    # connector). Comparing by `is` here silently excluded nothing, which
+    # let get_connector_near_point_excluding return the same connector that
+    # was supposed to be excluded. Compare by Origin proximity instead.
+    excluded_origin = excluded_connector.Origin if excluded_connector is not None else None
+    nearest = None
+    nearest_distance = None
+    for conn in get_physical_connectors(elem):
+        if excluded_origin is not None and conn.Origin.DistanceTo(excluded_origin) < 1e-6:
+            continue
+        dist = conn.Origin.DistanceTo(point)
+        if nearest is None or dist < nearest_distance:
+            nearest = conn
+            nearest_distance = dist
+    return nearest
+
+
+def get_perpendicular_axis(direction):
+    reference = XYZ.BasisX
+    if abs(direction.DotProduct(reference)) > 0.9:
+        reference = XYZ.BasisY
+    axis = direction.CrossProduct(reference)
+    if axis.GetLength() < 1e-6:
+        raise Exception('Could not determine a valid nipple rotation axis.')
+    return axis.Normalize()
 
 
 def get_connector_by_owner_and_point(owner_id, point):
@@ -365,7 +411,7 @@ def align_connector_to_target(element, source_connector, target_connector):
 
 
 def place_and_orient_nipple(nipple, start_point, end_point):
-    conn_a, conn_b = get_farthest_connector_pair(get_connectors(nipple))
+    conn_a, conn_b = get_farthest_connector_pair(get_physical_connectors(nipple))
     if conn_a is None or conn_b is None:
         raise Exception('Nipple fitting must have at least 2 connectors.')
 
@@ -382,50 +428,84 @@ def place_and_orient_nipple(nipple, start_point, end_point):
     if angle > 1e-6:
         rot_axis = current_axis.CrossProduct(desired_axis)
         if rot_axis.GetLength() < 1e-6:
-            rot_axis = conn_a.CoordinateSystem.BasisY
+            rot_axis = get_perpendicular_axis(current_axis)
+        else:
+            rot_axis = rot_axis.Normalize()
 
         line = Line.CreateBound(conn_a.Origin, conn_a.Origin + rot_axis)
         nipple.Location.Rotate(line, angle)
 
-    conn_a = get_connector_near_point(nipple, conn_a.Origin)
-    conn_b = get_connector_near_point(nipple, conn_b.Origin)
-
-    if conn_a.Origin.DistanceTo(start_point) > conn_b.Origin.DistanceTo(start_point):
-        conn_a, conn_b = conn_b, conn_a
-
+    # NOTE: the nipple is copied from an existing placed instance elsewhere in
+    # the model (create_nipple_instance), so at this point it can still be
+    # sitting many feet from start_point/end_point. Resolving "which connector
+    # is the start" by nearest-distance-to-target here was unreliable: with
+    # the nipple far away, its two connectors are nearly equidistant from the
+    # target and the nearest-point comparison is dominated by noise rather
+    # than real direction, so it could (and did, in testing) pick the wrong
+    # connector and place the nipple backwards.
+    #
+    # The rotation above was built directly from conn_a -> conn_b matching
+    # start_point -> end_point, so conn_a IS the start connector and conn_b
+    # IS the end connector by construction. Move using that directly.
     move_vec = start_point - conn_a.Origin
     nipple.Location.Move(move_vec)
 
+    # Connector wrapper objects can go stale across a Move, so re-fetch fresh
+    # ones. Now that the nipple is actually at the target location this
+    # nearest-point search is reliable (distances are inches, not feet).
     placed_start = get_connector_near_point(nipple, start_point)
-    placed_end = None
-    for conn in get_connectors(nipple):
-        if conn.Origin.DistanceTo(placed_start.Origin) > 1e-6:
-            placed_end = conn
-            break
+    placed_end = get_connector_near_point_excluding(nipple, end_point, placed_start)
 
-    if placed_end is None:
-        raise Exception('Could not find second nipple connector after placement.')
+    if placed_start is None or placed_end is None:
+        raise Exception('Could not resolve nipple connectors after placement.')
 
     return placed_start, placed_end
 
 
-def create_nipple_instance(nipple_choice, insertion_point):
+def find_matching_sample_instance(sample_instance_ids, expected_system_type_id):
+    # Prefer a placed instance that's already on the same piping system type
+    # as the pipe being replaced. CopyElement carries the source instance's
+    # system classification over to the copy, so blindly copying the first
+    # instance found anywhere in the model (previous behavior) could hand the
+    # new nipple a completely unrelated system (e.g. Natural Gas while
+    # replacing a Heating Water Supply pipe) with nothing downstream to
+    # correct it.
+    if expected_system_type_id is not None and expected_system_type_id != ElementId.InvalidElementId:
+        for sample_id in sample_instance_ids:
+            candidate = doc.GetElement(sample_id)
+            if candidate is None:
+                continue
+            if get_piping_system_type_id(candidate) == expected_system_type_id:
+                return candidate
+
+    for sample_id in sample_instance_ids:
+        candidate = doc.GetElement(sample_id)
+        if candidate is not None:
+            return candidate
+
+    return None
+
+
+def create_nipple_instance(nipple_choice, insertion_point, expected_system_type_id=None):
     choice_data = get_choice_data(nipple_choice)
     symbol = doc.GetElement(choice_data['symbol_id'])
     if symbol is None:
         raise Exception('Selected nipple symbol could not be found.')
 
-    sample_instance_id = choice_data.get('sample_instance_id')
-    if sample_instance_id is not None:
-        sample_instance = doc.GetElement(sample_instance_id)
-        if sample_instance is not None:
-            copied_ids = ElementTransformUtils.CopyElement(doc, sample_instance.Id, XYZ(0, 0, 0))
-            if copied_ids is None or copied_ids.Count == 0:
-                raise Exception('Failed to copy selected nipple fitting.')
+    sample_instance_ids = choice_data.get('sample_instance_ids') or []
+    legacy_sample_id = choice_data.get('sample_instance_id')
+    if not sample_instance_ids and legacy_sample_id is not None:
+        sample_instance_ids = [legacy_sample_id]
 
-            nipple_instance = doc.GetElement(copied_ids[0])
-            nipple_instance.ChangeTypeId(symbol.Id)
-            return nipple_instance
+    sample_instance = find_matching_sample_instance(sample_instance_ids, expected_system_type_id)
+    if sample_instance is not None:
+        copied_ids = ElementTransformUtils.CopyElement(doc, sample_instance.Id, XYZ(0, 0, 0))
+        if copied_ids is None or copied_ids.Count == 0:
+            raise Exception('Failed to copy selected nipple fitting.')
+
+        nipple_instance = doc.GetElement(copied_ids[0])
+        nipple_instance.ChangeTypeId(symbol.Id)
+        return nipple_instance
 
     try:
         if hasattr(symbol, 'IsActive') and (not symbol.IsActive):
@@ -580,7 +660,7 @@ def main():
     remote_owner_point = remote_other_connector.Origin
 
     with revit.Transaction('Change Pipe To Nipple'):
-        nipple_instance = create_nipple_instance(nipple_choice, fixed_start_point)
+        nipple_instance = create_nipple_instance(nipple_choice, fixed_start_point, expected_system_type_id)
 
         for pname in ('Nom Radius1', 'Nom Radius2'):
             p = nipple_instance.LookupParameter(pname)
