@@ -1,0 +1,14 @@
+tooltip:
+  en_us: >-
+    Exports a BOM CSV (Quantity, Size, Description, Total Length, Sort) for selected
+    pipes, fittings, pipe accessories, mechanical and plumbing equipment.
+    Uses the current selection, or prompts for one if nothing valid is selected.
+
+title:
+  en_us: >-
+    Export
+
+    BOM CSV
+authors:
+  - 'SVarner'
+min_revit_version: 2022
