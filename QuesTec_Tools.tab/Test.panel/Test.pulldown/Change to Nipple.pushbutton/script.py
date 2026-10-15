@@ -108,9 +108,22 @@ def get_physical_connectors(elem):
     return physical
 
 
+PHYSICAL_CONNECTOR_TYPES = (ConnectorType.End, ConnectorType.Curve, ConnectorType.Physical)
+
+
+def is_physical_ref(ref):
+    # Insulation/lining attach to pipes and fittings through Reference
+    # connectors, and piping systems through Logical ones. Neither exposes
+    # Origin, so they must be skipped when looking for the real neighbor.
+    try:
+        return ref.ConnectorType in PHYSICAL_CONNECTOR_TYPES
+    except Exception:
+        return False
+
+
 def get_other_owner_connector(connector):
     for ref in connector.AllRefs:
-        if ref.Owner.Id != connector.Owner.Id:
+        if ref.Owner.Id != connector.Owner.Id and is_physical_ref(ref):
             return ref
     return None
 
@@ -131,7 +144,7 @@ def get_connected_connector_count(fitting):
     connected_count = 0
     for conn in get_connectors(fitting):
         for ref in conn.AllRefs:
-            if ref.Owner.Id != fitting.Id:
+            if ref.Owner.Id != fitting.Id and is_physical_ref(ref):
                 connected_count += 1
                 break
     return connected_count
@@ -192,7 +205,11 @@ def get_fitting_connector_connected_to_pipe(fitting, pipe_id):
 
 
 def parse_length_inches(family_name):
-    match = re.search(r'(\d+_5|\d+(?:\.\d+)?)', family_name or '')
+    # Prefer the number after 'Length' or 'x' (e.g. 'Length 2_5', 'x1_5') so
+    # material grades like 'SS 304' aren't read as the length.
+    match = re.search(r'(?:length\s*|x)(\d+_5|\d+(?:\.\d+)?)', family_name or '', re.I)
+    if not match:
+        match = re.search(r'(\d+_5|\d+(?:\.\d+)?)', family_name or '')
     if not match:
         return None
 
@@ -478,11 +495,9 @@ def find_matching_sample_instance(sample_instance_ids, expected_system_type_id):
             if get_piping_system_type_id(candidate) == expected_system_type_id:
                 return candidate
 
-    for sample_id in sample_instance_ids:
-        candidate = doc.GetElement(sample_id)
-        if candidate is not None:
-            return candidate
-
+    # No same-system sample: return None so create_nipple_instance places a
+    # fresh instance. A fresh instance has no system and inherits the pipe's
+    # system once connected; a copy from another system keeps the wrong one.
     return None
 
 
@@ -731,10 +746,9 @@ def main():
                 raise Exception('Open connector not found at nipple end after moving fitting.')
 
             nipple_system_type_id = get_piping_system_type_id(nipple_instance)
-            if (
-                expected_system_type_id != ElementId.InvalidElementId
-                and nipple_system_type_id == expected_system_type_id
-            ):
+            # A freshly placed nipple has no system until the transaction
+            # commits, so treat "unassigned" as a match.
+            if nipple_system_type_id in (expected_system_type_id, ElementId.InvalidElementId):
                 connect_if_needed(fitting_open_connector, end_connector)
             else:
                 reconnect_skip_reason = (
@@ -743,10 +757,9 @@ def main():
                 )
         elif fitting_open_connector.Origin.DistanceTo(end_connector.Origin) < 1e-4:
             nipple_system_type_id = get_piping_system_type_id(nipple_instance)
-            if (
-                expected_system_type_id != ElementId.InvalidElementId
-                and nipple_system_type_id == expected_system_type_id
-            ):
+            # A freshly placed nipple has no system until the transaction
+            # commits, so treat "unassigned" as a match.
+            if nipple_system_type_id in (expected_system_type_id, ElementId.InvalidElementId):
                 connect_if_needed(fitting_open_connector, end_connector)
             else:
                 reconnect_skip_reason = (

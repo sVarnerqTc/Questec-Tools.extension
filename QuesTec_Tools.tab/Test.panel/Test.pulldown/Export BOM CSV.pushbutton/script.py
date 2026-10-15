@@ -225,6 +225,10 @@ def get_description(element):
     return get_family_name(element)
 
 
+def get_stock_code(element):
+    return get_param(element, 'QTC Stock Code')
+
+
 def get_length_ft(element):
     p = element.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)
     if p is None or not p.HasValue:
@@ -312,7 +316,10 @@ def build_rows(elements):
             sort = CATEGORY_SORT[get_category_id(el)]
             size = get_size(el)
             desc = get_description(el)
-            key = (sort, size, desc)
+            stock_code = get_stock_code(el)
+            # Stock code is part of the key so items with different codes
+            # (or a missing code) don't get merged into one row.
+            key = (sort, size, desc, stock_code)
             entry = groups.setdefault(key, {'qty': 0, 'length': 0.0})
             entry['qty'] += 1
             if sort == SORT_PIPE:
@@ -321,7 +328,7 @@ def build_rows(elements):
             logger.warning('Skipped element {}: {}'.format(id_value(el.Id), ex))
 
     keys = sorted(groups.keys(),
-                  key=lambda k: (k[0], k[2].lower(), size_sort_key(k[1])))
+                  key=lambda k: (k[0], k[2].lower(), size_sort_key(k[1]), k[3]))
     return [(k, groups[k]) for k in keys]
 
 
@@ -330,7 +337,7 @@ def write_csv(path, rows):
     lines = [header]
     total_qty = 0
     total_len = 0.0
-    for (sort, size, desc), entry in rows:
+    for (sort, size, desc, stock_code), entry in rows:
         total_qty += entry['qty']
         total_len += entry['length']
         length_txt = format_feet_inches(entry['length']) if sort == SORT_PIPE else ''
@@ -340,7 +347,7 @@ def write_csv(path, rows):
             csv_quote(size),
             csv_quote(desc),
             csv_quote(length_txt),
-            csv_quote(''),            # Stock Code
+            csv_quote(stock_code),    # Stock Code
             csv_quote(''),            # Back Order
             csv_quote(''),            # Vendor
             csv_quote(''),            # ETA

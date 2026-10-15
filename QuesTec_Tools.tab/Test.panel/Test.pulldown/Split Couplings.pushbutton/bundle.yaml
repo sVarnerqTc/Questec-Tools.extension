@@ -1,0 +1,7 @@
+title:
+  en_us: Split Couplings
+tooltip:
+  en_us: Split selected pipes into set-length pieces joined by a coupling you pick from the project. Uses the coupling takeout to place each break, then checks every final piece length.
+authors:
+  - QuesTec BIM
+min_revit_version: 2022
