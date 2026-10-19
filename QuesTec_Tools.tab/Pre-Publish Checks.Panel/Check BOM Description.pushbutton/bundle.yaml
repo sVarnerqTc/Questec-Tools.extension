@@ -1,10 +1,10 @@
 tooltip:
-  en_us: In a 3D view, isolates elements with no 'QTC BOM Description' or 'Alternate Description II'
+  en_us: Temporarily isolates pipes, fittings, accessories, mechanical equipment, plumbing fixtures and plumbing equipment with no 'QTC BOM Description' or 'Alternate Description II'. Checks the selection if there is one, otherwise what's visible in the active view (respects an existing temporary isolate).
 
 title:
   en_us: >-
     Check
-  
+
     BOM Descriptions
 authors:
   - 'SVarner'

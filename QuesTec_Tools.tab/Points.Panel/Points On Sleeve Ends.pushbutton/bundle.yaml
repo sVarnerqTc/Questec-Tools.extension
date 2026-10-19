@@ -1,0 +1,13 @@
+tooltip:
+  en_us: Place layout points on both ends of every SL-Sleeves pipe in the active view (or only the selected pipes, if a selection exists) and report how many sleeves were found
+
+title:
+  en_us: >-
+    Points On
+
+    Sleeve Ends
+authors:
+  - 'SVarner'
+icon: icon.png
+help_url:
+min_revit_version: 2019
