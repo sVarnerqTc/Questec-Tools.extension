@@ -1,0 +1,15 @@
+tooltip:
+  en_us: >-
+    Removes columns a type catalog (.txt) can't use in this Revit version.
+    Columns with POUNDS or GALLONS in the header are pre-checked; you confirm before anything is removed.
+    The original is kept as <name>_original.txt. Shift+Click to edit the keyword list.
+
+title:
+  en_us: >-
+    Fix Type
+
+    Catalog
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

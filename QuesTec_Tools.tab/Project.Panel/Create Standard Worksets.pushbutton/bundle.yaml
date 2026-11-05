@@ -1,10 +1,10 @@
 tooltip:
-  en_us:Run this command to add standard worksets to you project. Worksharing must already be enabled.
+  en_us: Adds the Questec standard worksets (Pipe - Mechanical/Plumbing/Underground, Hangers - Mechanical/Plumbing, Points - Control/Layout, Sheet Metal) to your project. Existing worksets are skipped. Worksharing must already be enabled.
 
 title:
   en_us: >-
     Create
-  
+
     Standard Worksets
 authors:
   - 'SVarner'

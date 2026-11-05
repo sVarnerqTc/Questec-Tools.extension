@@ -400,6 +400,43 @@ if len(rod_mismatch_targets) > 0:
         warn_icon=True
     )
 
+# Rod check for hangers with no pipe or conflicting pipes (no pipe size to go by).
+# 3/8" is the minimum. Larger rods are kept but reported, since there is no
+# pipe size to verify them against. Smaller or empty rods are set to 3/8".
+DEFAULT_UNMATCHED_ROD = 0.375 / 12.0
+unmatched_rods_defaulted = []   # (hanger id, previous value text)
+unmatched_rods_flagged = []     # (hanger id, rod size text) for rods larger than 3/8"
+unmatched_rods_failed = []      # (hanger id, reason)
+
+def format_rod_inches(value_feet):
+    return '{0:.4g}"'.format(value_feet * 12.0)
+
+def check_unmatched_hanger_rod(hanger):
+    """Rod must be at least 3/8". Smaller or empty defaults to 3/8".
+    Larger rods are left as-is but reported (no pipe size to verify them)."""
+    rod_param = hanger.LookupParameter('Rod Diameter')
+    if rod_param is None:
+        unmatched_rods_failed.append((hanger.Id.IntegerValue, 'Rod Diameter parameter not found'))
+        return
+
+    actual = rod_param.AsDouble() if rod_param.HasValue else None
+    if actual is not None:
+        if abs(actual - DEFAULT_UNMATCHED_ROD) <= rod_diameter_tolerance:
+            return
+        if actual > DEFAULT_UNMATCHED_ROD:
+            unmatched_rods_flagged.append((hanger.Id.IntegerValue, format_rod_inches(actual)))
+            return
+
+    previous = format_rod_inches(actual) if actual is not None else '(empty)'
+    if rod_param.IsReadOnly:
+        unmatched_rods_failed.append((hanger.Id.IntegerValue, 'Rod Diameter is read-only (was {0})'.format(previous)))
+        return
+    try:
+        rod_param.Set(DEFAULT_UNMATCHED_ROD)
+        unmatched_rods_defaulted.append((hanger.Id.IntegerValue, previous))
+    except Exception as ex:
+        unmatched_rods_failed.append((hanger.Id.IntegerValue, 'Could not set Rod Diameter: {0}'.format(ex)))
+
 updated_hanger_elevation_count = 0
 flagged_hanger_elevation_count = 0
 flagged_hanger_size_count = 0
@@ -502,11 +539,13 @@ with revit.Transaction('Update Hanger Parameters'):
 
     # Handle hangers with no pipes
     for hanger in hangers_no_pipes:
+        check_unmatched_hanger_rod(hanger)
         set_error_message(hanger, 'No pipe found')
         track_error_elements(hanger)
     
     # Handle hangers with multiple systems
     for hanger, pipes in hangers_multiple_systems:
+        check_unmatched_hanger_rod(hanger)
         set_error_message(hanger, 'Multiple systems found')
         track_error_elements(hanger, pipes)
 
@@ -529,7 +568,9 @@ results_message = '''Results:
 {6} hangers flagged for undersized support
 {7} rod diameters updated to standards
 {8} hangers flagged for rod diameter mismatch
-{9} hangers flagged for pipe size above standards table'''.format(
+{9} hangers flagged for pipe size above standards table
+{10} no-pipe/conflict hangers defaulted to 3/8" rod
+{11} no-pipe/conflict hangers with rod larger than 3/8" (not verified)'''.format(
     len(hangers_with_pipes),
     len(hangers_no_pipes),
     len(hangers_multiple_systems),
@@ -539,7 +580,9 @@ results_message = '''Results:
     flagged_hanger_size_count,
     updated_rod_diameter_count,
     flagged_rod_diameter_count,
-    flagged_pipe_standards_count
+    flagged_pipe_standards_count,
+    len(unmatched_rods_defaulted),
+    len(unmatched_rods_flagged)
 )
 output = script.get_output()
 output.set_height(800)
@@ -561,6 +604,33 @@ if reference_level_mismatches:
                 pipe_level_name
             )
         )
+
+if unmatched_rods_defaulted or unmatched_rods_flagged or unmatched_rods_failed:
+    output.print_md('\n## Rod Check - Hangers With No Pipe or Conflicting Pipes')
+    if unmatched_rods_defaulted:
+        output.print_md('**Defaulted to 3/8" rod:**')
+        for hanger_id, previous in unmatched_rods_defaulted:
+            output.print_md('* Hanger {0} (was {1})'.format(output.linkify(ElementId(hanger_id)), previous))
+    if unmatched_rods_flagged:
+        output.print_md('**Rod larger than 3/8" - kept, but no pipe size could be used to verify it:**')
+        for hanger_id, label in unmatched_rods_flagged:
+            output.print_md('* Hanger {0}: {1}'.format(output.linkify(ElementId(hanger_id)), label))
+    if unmatched_rods_failed:
+        output.print_md('**Could not check/update rod:**')
+        for hanger_id, reason in unmatched_rods_failed:
+            output.print_md('* Hanger {0}: {1}'.format(output.linkify(ElementId(hanger_id)), reason))
+
+if unmatched_rods_defaulted or unmatched_rods_flagged:
+    rod_lines = []
+    if unmatched_rods_defaulted:
+        rod_lines.append('{0} hangers with no pipe or conflicting pipes had a rod smaller than 3/8" (or none) and were set to 3/8".'.format(
+            len(unmatched_rods_defaulted)))
+    if unmatched_rods_flagged:
+        rod_lines.append('{0} hangers with no pipe or conflicting pipes have a rod larger than 3/8". '
+                         'The rod size was kept, but no pipe size could be used to verify it.'.format(
+            len(unmatched_rods_flagged)))
+    rod_lines.append('\nSee the output window for hanger IDs.')
+    forms.alert('\n'.join(rod_lines), title='Rod Diameter Check', warn_icon=True)
 
 if len(error_hanger_ids) > 0 or len(hangers_no_pipes) > 0 or len(hangers_multiple_systems) > 0 or len(reference_level_mismatches) > 0:
     forms.alert(results_message)

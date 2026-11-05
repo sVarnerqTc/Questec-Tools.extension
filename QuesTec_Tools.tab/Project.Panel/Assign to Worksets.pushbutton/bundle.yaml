@@ -1,0 +1,17 @@
+tooltip:
+  en_us: >-
+    Assigns elements to worksets. MP-/MS- systems go to Pipe - Mechanical, PL-/PP- to Pipe - Plumbing,
+    piping below the underground level to Pipe - Underground, SSW point families (name starts with SSW and contains Point) to Points - Control/Layout,
+    hangers (BOP parameter) to Hangers - Mechanical/Plumbing by Support Discipline, then Comments,
+    and links to Link-<EXT>-<Filename>. Elements owned by others are skipped.
+    Shift+Click to change the underground level.
+
+title:
+  en_us: >-
+    Assign to
+
+    Worksets
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
