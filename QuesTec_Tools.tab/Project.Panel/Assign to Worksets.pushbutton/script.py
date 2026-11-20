@@ -17,6 +17,10 @@ Rules (in priority order):
        b. Comments containing a system name (MP-/MS-/PL-/PP-)
        c. The hanger's own system, if it has one
 
+Scope is chosen at the start: the current selection (or pick elements if
+nothing is selected), elements visible in the active view, or the entire
+project.
+
 The underground level is asked for on the first run in each project and
 remembered. Shift+Click the button to pick a different level.
 
@@ -45,7 +49,10 @@ from Autodesk.Revit.DB import (
     WorksharingUtils,
     CheckoutStatus,
     ModelUpdatesStatus,
+    TemporaryViewMode,
 )
+from Autodesk.Revit.Exceptions import OperationCanceledException
+from Autodesk.Revit.UI.Selection import ObjectType
 from Autodesk.Revit.DB.Plumbing import PipingSystemType
 from System.Collections.Generic import List
 from pyrevit import forms, script
@@ -54,6 +61,7 @@ import underground_level
 
 
 doc = __revit__.ActiveUIDocument.Document
+uidoc = __revit__.ActiveUIDocument
 
 TITLE = "Assign to Worksets"
 
@@ -178,11 +186,17 @@ def build_link_workset_name(file_name, fallback_ext):
     return sanitize_workset_name("Link-{0}-{1}".format(ext, base))
 
 
-def collect_link_assignments():
-    """Return list of (element, target workset name)."""
+def collect_link_assignments(scope_ids=None):
+    """Return list of (element, target workset name).
+    scope_ids: set of element id ints to limit to, or None for the whole project."""
     results = []
 
+    def in_scope(inst):
+        return scope_ids is None or inst.Id.IntegerValue in scope_ids
+
     for inst in FilteredElementCollector(doc).OfClass(RevitLinkInstance).ToElements():
+        if not in_scope(inst):
+            continue
         link_type = doc.GetElement(inst.GetTypeId())
         if link_type is None:
             continue
@@ -191,7 +205,7 @@ def collect_link_assignments():
         results.append((link_type, ws_name))
 
     for inst in FilteredElementCollector(doc).OfClass(ImportInstance).ToElements():
-        if not inst.IsLinked:
+        if not in_scope(inst) or not inst.IsLinked:
             continue
         link_type = doc.GetElement(inst.GetTypeId())
         if not isinstance(link_type, CADLinkType):
@@ -201,6 +215,8 @@ def collect_link_assignments():
         results.append((link_type, ws_name))
 
     for inst in FilteredElementCollector(doc).OfClass(PointCloudInstance).ToElements():
+        if not in_scope(inst):
+            continue
         cloud_type = doc.GetElement(inst.GetTypeId())
         if cloud_type is None:
             continue
@@ -377,11 +393,77 @@ def is_editable(element_id):
     return True
 
 
+# ---------------------------------------------------------------- scope
+
+SCOPE_SELECTION = "Selection"
+SCOPE_VIEW = "Elements Visible in View"
+SCOPE_PROJECT = "All Elements in Project"
+
+
+def pick_elements():
+    """Let the user window/click-select elements. Returns ids or None if cancelled."""
+    try:
+        refs = uidoc.Selection.PickObjects(
+            ObjectType.Element, "Select elements to assign to worksets, then click Finish")
+    except OperationCanceledException:
+        return None
+    return [r.ElementId for r in refs]
+
+
+def get_view_element_ids(view):
+    ids = FilteredElementCollector(doc, view.Id).WhereElementIsNotElementType().ToElementIds()
+    if view.IsTemporaryHideIsolateActive():
+        visible = []
+        for element_id in ids:
+            try:
+                if view.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element_id):
+                    visible.append(element_id)
+            except Exception:
+                visible.append(element_id)
+        return visible
+    return list(ids)
+
+
+def choose_scope():
+    """Return (scope label, set of element id ints or None for whole project),
+    or (None, None) if cancelled."""
+    choice = forms.CommandSwitchWindow.show(
+        [SCOPE_SELECTION, SCOPE_VIEW, SCOPE_PROJECT],
+        message="Which elements should be assigned to worksets?",
+    )
+    if not choice:
+        return None, None
+
+    if choice == SCOPE_PROJECT:
+        return "entire project", None
+
+    if choice == SCOPE_VIEW:
+        view = doc.ActiveView
+        return "visible in view '{0}'".format(view.Name), set(
+            i.IntegerValue for i in get_view_element_ids(view))
+
+    ids = list(uidoc.Selection.GetElementIds())
+    label = "current selection"
+    if not ids:
+        ids = pick_elements()
+        if not ids:
+            return None, None
+        label = "picked elements"
+    return "{0} ({1} elements)".format(label, len(ids)), set(i.IntegerValue for i in ids)
+
+
 # ---------------------------------------------------------------- main
 
 def main():
     if doc.IsFamilyDocument or not doc.IsWorkshared:
         forms.alert("This model is not workshared. Enable worksharing first.", title=TITLE)
+        return
+
+    scope_label, scope_ids = choose_scope()
+    if scope_label is None:
+        return
+    if scope_ids is not None and not scope_ids:
+        forms.alert("No elements in the chosen scope.", title=TITLE)
         return
 
     level = underground_level.get_or_pick_level(doc)
@@ -396,12 +478,17 @@ def main():
     hangers_unmatched = 0
 
     # 1. Links
-    for elem, ws_name in collect_link_assignments():
+    for elem, ws_name in collect_link_assignments(scope_ids):
         plan[elem.Id.IntegerValue] = (elem, ws_name)
 
     # 2-4. Piping elements and points
+    if scope_ids is None:
+        piping_collector = FilteredElementCollector(doc)
+    else:
+        piping_collector = FilteredElementCollector(
+            doc, List[ElementId]([ElementId(i) for i in scope_ids]))
     piping = (
-        FilteredElementCollector(doc)
+        piping_collector
         .WherePasses(ElementMulticategoryFilter(get_piping_categories()))
         .WhereElementIsNotElementType()
         .ToElements()
@@ -435,7 +522,7 @@ def main():
             plan[key] = (elem, ws_name)
 
     if not plan:
-        forms.alert("No elements matched any workset rule.", title=TITLE)
+        forms.alert("No elements in the {0} matched any workset rule.".format(scope_label), title=TITLE)
         return
 
     existing = get_user_worksets()
@@ -494,7 +581,7 @@ def main():
             forms.alert("Command failed, nothing was changed:\n\n{0}".format(ex), title=TITLE)
             return
 
-    lines = ["Underground level: {0}".format(level.Name), ""]
+    lines = ["Scope: {0}".format(scope_label), "Underground level: {0}".format(level.Name), ""]
     if moved:
         lines.append("Moved:")
         for ws_name in sorted(moved):

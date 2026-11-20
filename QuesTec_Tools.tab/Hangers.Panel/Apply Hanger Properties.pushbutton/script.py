@@ -277,6 +277,12 @@ def set_error_message(element, message):
         print("Warning: Failed writing QTC Error on element {}: {}".format(element.Id, str(ex)))
         return False
 
+HANGER_SIZE_3IN_MESSAGE = (
+    'Hanger size too small for pipe + insulation - '
+    'insulation will likely be 3" nominal diameter'
+)
+
+
 def is_script_error_message(message):
     if not message:
         return False
@@ -285,6 +291,7 @@ def is_script_error_message(message):
         'Hanger elevation does not match pipe centerline',
         'Pipe and hanger reference levels do not match',
         'Hanger size too small for pipe + insulation',
+        HANGER_SIZE_3IN_MESSAGE,
         'Rod diameter does not match standards table',
         'Pipe size exceeds standards table',
         'Multiple pipes same system',
@@ -440,6 +447,7 @@ def check_unmatched_hanger_rod(hanger):
 updated_hanger_elevation_count = 0
 flagged_hanger_elevation_count = 0
 flagged_hanger_size_count = 0
+flagged_hanger_size_3in_count = 0
 updated_rod_diameter_count = 0
 flagged_reference_level_count = 0
 flagged_rod_diameter_count = 0
@@ -496,13 +504,22 @@ with revit.Transaction('Update Hanger Parameters'):
         updates_succeeded = set_parameter_safely(hanger, 'QTC Pipe ID', pipe_data['pipe_id']) and updates_succeeded
         updates_succeeded = set_parameter_safely(hanger, 'Support Discipline', pipe_data['system_abbr']) and updates_succeeded
 
-        # Hanger size must be >= pipe OD + 2x insulation thickness.
+        # Hanger size must be >= nominal pipe size + 2x insulation thickness.
+        # With 1" insulation the minimum is 3" (insulation on small pipe is
+        # likely 3" nominal diameter).
         required_hanger_size = pipe_data['pipe_size'] + (2.0 * pipe_data['insulation_thickness'])
+        uses_3in_minimum = False
         if abs(pipe_data['insulation_thickness'] - one_inch_in_feet) <= insulation_match_tolerance:
+            if required_hanger_size < three_inches_in_feet:
+                uses_3in_minimum = True
             required_hanger_size = max(required_hanger_size, three_inches_in_feet)
         actual_hanger_size = 2.0 * hanger.LookupParameter('Nom Radius').AsDouble()
         if (actual_hanger_size + hanger_size_tolerance) < required_hanger_size:
-            set_error_message(hanger, 'Hanger size too small for pipe + insulation')
+            if uses_3in_minimum:
+                set_error_message(hanger, HANGER_SIZE_3IN_MESSAGE)
+                flagged_hanger_size_3in_count += 1
+            else:
+                set_error_message(hanger, 'Hanger size too small for pipe + insulation')
             has_hanger_size_mismatch = True
             flagged_hanger_size_count += 1
             track_error_elements(hanger, related_pipes)
@@ -565,7 +582,7 @@ results_message = '''Results:
 {3} hanger elevations updated to centerline
 {4} hangers flagged for elevation mismatch
 {5} hangers flagged for reference level mismatch
-{6} hangers flagged for undersized support
+{6} hangers flagged for undersized support ({12} on small pipe with 1" insulation - insulation will likely be 3" nominal diameter)
 {7} rod diameters updated to standards
 {8} hangers flagged for rod diameter mismatch
 {9} hangers flagged for pipe size above standards table
@@ -582,7 +599,8 @@ results_message = '''Results:
     flagged_rod_diameter_count,
     flagged_pipe_standards_count,
     len(unmatched_rods_defaulted),
-    len(unmatched_rods_flagged)
+    len(unmatched_rods_flagged),
+    flagged_hanger_size_3in_count
 )
 output = script.get_output()
 output.set_height(800)

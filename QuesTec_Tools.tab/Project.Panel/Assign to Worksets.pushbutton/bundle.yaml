@@ -4,6 +4,7 @@ tooltip:
     piping below the underground level to Pipe - Underground, SSW point families (name starts with SSW and contains Point) to Points - Control/Layout,
     hangers (BOP parameter) to Hangers - Mechanical/Plumbing by Support Discipline, then Comments,
     and links to Link-<EXT>-<Filename>. Elements owned by others are skipped.
+    Asks first whether to use the selection, elements visible in the view, or the whole project.
     Shift+Click to change the underground level.
 
 title:

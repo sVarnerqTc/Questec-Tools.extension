@@ -1,0 +1,18 @@
+tooltip:
+  en_us: >-
+    On vertical rectangular duct elbows and rectangular offsets in a vertical offset, changes
+    Connector Name values "S and Drive-1/-2" to "Drive and S-1/-2" and "Standing S and Drive-1/-2"
+    to "Standing Drive and S-1/-2" (the number is kept).
+    Horizontal offsets are left alone. Asks whether to use the selection (current, or pick if
+    nothing is selected) or the active view. Changed fittings are temporarily isolated and a
+    summary is shown.
+
+title:
+  en_us: >-
+    Drive
+
+    and S
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

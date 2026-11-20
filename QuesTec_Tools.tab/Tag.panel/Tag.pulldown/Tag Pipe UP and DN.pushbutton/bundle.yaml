@@ -1,0 +1,16 @@
+tooltip:
+  en_us: >-
+    In the active plan view, tags pipes that cross the "UP" deck level with the UP tag and pipes that
+    cross the "DN" deck level with the DN tag. Pipes crossing both get Comments = "&DN".
+    Uses the current selection if there is one, otherwise all pipes in the view.
+    Pipes already tagged with the same tag type are skipped.
+
+title:
+  en_us: >-
+    Tag Pipe
+
+    UP and DN
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

@@ -5,7 +5,7 @@ from pyrevit import forms, script
 
 def main():
     config = script.get_config()
-    current_shift = getattr(config, "viewport_shift_inches", -1.5)
+    current_shift = getattr(config, "viewport_shift_inches", -1.625)
 
     shift_input = forms.ask_for_string(
         default=str(current_shift),
