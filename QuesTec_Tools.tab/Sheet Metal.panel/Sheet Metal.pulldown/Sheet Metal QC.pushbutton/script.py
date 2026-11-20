@@ -8,12 +8,18 @@ Fabrication Ductwork.
 Scope: the current selection if there is one; otherwise everything visible in
 the active view (honoring any temporary hide/isolate already applied).
 
-Elements with a blank value are temporarily isolated and selected, and a
+Also checks duct fittings in the "Radius Bend" family: the Angle must be
+between 44 and 46 or between 89 and 91 degrees.
+
+Elements with a blank value or a bad bend angle are temporarily isolated and selected, and a
 summary of the issues is shown. Items with the "Bead and Crimp" instance
-parameter checked are skipped. Elements that don't have the Material or
+parameter checked skip the Material / Specification Name checks, but still
+get the Radius Bend angle check. Elements that don't have the Material or
 Specification Name parameter at all
 are counted in the summary but not isolated.
 """
+
+import math
 
 from Autodesk.Revit.DB import (
     BuiltInCategory,
@@ -47,8 +53,14 @@ CHECKS = [
     ("Specification Name", "Specification Name"),
 ]
 
-# Items with this Yes/No instance parameter checked are skipped entirely.
+# Items with this Yes/No instance parameter checked skip the Material /
+# Specification Name checks (the Radius Bend angle check still applies).
 SKIP_YES_NO_PARAM = "Bead and Crimp"
+
+# Radius Bend angle check: the Angle must fall in one of these ranges (degrees).
+ANGLE_FAMILY = "Radius Bend"
+ANGLE_PARAM = "Angle"
+ANGLE_RANGES = [(44.0, 46.0), (89.0, 91.0)]
 
 BLANK = "blank"
 MISSING = "missing"
@@ -100,6 +112,28 @@ def is_skipped(element):
         return False
 
 
+def get_family_name(element):
+    try:
+        return element.Symbol.FamilyName
+    except Exception:
+        return ""
+
+
+def bad_bend_angle(element):
+    """For 'Radius Bend' fittings: return the angle in degrees if it is outside
+    the allowed ranges, otherwise None."""
+    if get_family_name(element) != ANGLE_FAMILY:
+        return None
+    param = element.LookupParameter(ANGLE_PARAM)
+    if param is None or not param.HasValue or param.StorageType != StorageType.Double:
+        return None
+    degrees = math.degrees(param.AsDouble())
+    for low, high in ANGLE_RANGES:
+        if low <= degrees <= high:
+            return None
+    return degrees
+
+
 def is_visible_in_temp_mode(view, element):
     try:
         return view.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id)
@@ -147,12 +181,24 @@ def main():
     counts = {}
     flagged = []
     skipped = 0
+    bad_angles = []  # (element, degrees)
     for elem in elements:
-        if is_skipped(elem):
-            skipped += 1
-            continue
         cat_label = category_names.get(elem.Category.Id.IntegerValue, elem.Category.Name)
         is_flagged = False
+
+        # Radius Bend angle check applies to every item, Bead and Crimp or not.
+        angle = bad_bend_angle(elem)
+        if angle is not None:
+            bad_angles.append((elem, angle))
+            is_flagged = True
+
+        # Bead and Crimp items skip only the Material / Specification Name checks.
+        if is_skipped(elem):
+            skipped += 1
+            if is_flagged:
+                flagged.append(elem)
+            continue
+
         for check_label, param_name in CHECKS:
             state = param_state(elem, param_name)
             if state is None:
@@ -165,9 +211,10 @@ def main():
             flagged.append(elem)
 
     # ---- summary text
-    lines = ["Checked {0} duct items in the {1}.".format(len(elements) - skipped, scope_label)]
+    lines = ["Checked {0} duct items in the {1}.".format(len(elements), scope_label)]
     if skipped:
-        lines.append("Skipped {0} with \"{1}\" checked.".format(skipped, SKIP_YES_NO_PARAM))
+        lines.append("Material / Specification Name not checked on {0} with \"{1}\" checked.".format(
+            skipped, SKIP_YES_NO_PARAM))
     lines.append("")
     any_blank = False
     for check_label, _ in CHECKS:
@@ -179,6 +226,17 @@ def main():
             for cat, n in rows:
                 lines.append("    {0}: {1}".format(cat, n))
             lines.append("")
+
+    if bad_angles:
+        any_blank = True
+        lines.append("{0} angle outside 44-46 or 89-91 degrees: {1}".format(ANGLE_FAMILY, len(bad_angles)))
+        by_angle = {}
+        for _, deg in bad_angles:
+            key = round(deg, 2)
+            by_angle[key] = by_angle.get(key, 0) + 1
+        for deg in sorted(by_angle):
+            lines.append(u"    {0:.2f}\u00b0: {1}".format(deg, by_angle[deg]))
+        lines.append("")
 
     missing_rows = [(chk, cat, n) for (chk, cat, state), n in sorted(counts.items()) if state == MISSING]
     if missing_rows:
