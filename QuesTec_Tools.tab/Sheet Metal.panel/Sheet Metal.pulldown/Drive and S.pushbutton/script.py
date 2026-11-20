@@ -11,7 +11,8 @@ offsets, rename connector names "S and Drive-<n>" to "Drive and S-<n>" and
     Horizontal offsets, and offsets in a duct that itself runs vertically,
     are left alone.
   * Text: every instance parameter whose name starts with "Connector Name"
-    (Connector Name1, Connector Name2, ...) - "S and Drive-n" becomes
+    (Connector Name1, Connector Name2, ...) or is "C1 Name", "C2 Name", ...
+    when present - "S and Drive-n" becomes
     "Drive and S-n", and "Standing S and Drive-n" becomes
     "Standing Drive and S-n".
   * The Yes/No connection check boxes (S and Drive1, Drive and S1, ...) are
@@ -52,6 +53,7 @@ uidoc = __revit__.ActiveUIDocument
 
 TITLE = "Drive and S"
 PARAM_PREFIX = "Connector Name"
+C_NAME_PATTERN = re.compile(r"^C\d+ Name$")   # C1 Name, C2 Name, ...
 # "S and Drive-1" -> "Drive and S-1"; "Standing S and Drive-1" -> "Standing Drive and S-1"
 OLD_PATTERN = re.compile(r"^(\s*)(Standing\s+)?S and Drive(.*)$", re.IGNORECASE)
 NEW_TEXT = "Drive and S"
@@ -131,7 +133,9 @@ def get_connector_name_params(element):
     params = []
     for p in element.Parameters:
         try:
-            if p.Definition.Name.startswith(PARAM_PREFIX) and p.StorageType == StorageType.String:
+            name = p.Definition.Name
+            if p.StorageType == StorageType.String and (
+                    name.startswith(PARAM_PREFIX) or C_NAME_PATTERN.match(name)):
                 params.append(p)
         except Exception:
             pass

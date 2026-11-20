@@ -2,7 +2,7 @@
 """Sheet Metal QC: find duct items with a blank Material or Specification Name
 (both instance parameters under Identity Data).
 
-Categories checked: Ducts, Duct Fittings, Flex Ducts, Duct Accessories,
+Categories checked: Ducts, Duct Fittings, Flex Ducts,
 Fabrication Ductwork.
 
 Scope: the current selection if there is one; otherwise everything visible in
@@ -36,7 +36,6 @@ CATEGORIES = [
     ("OST_DuctCurves", "Ducts"),
     ("OST_DuctFitting", "Duct Fittings"),
     ("OST_FlexDuctCurves", "Flex Ducts"),
-    ("OST_DuctAccessory", "Duct Accessories"),
     ("OST_FabricationDuctwork", "Fabrication Ductwork"),
 ]
 

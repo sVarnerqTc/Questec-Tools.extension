@@ -1,6 +1,6 @@
 tooltip:
   en_us: >-
-    Checks ducts, duct fittings, flex ducts, duct accessories and fabrication ductwork for a blank
+    Checks ducts, duct fittings, flex ducts and fabrication ductwork (not duct accessories) for a blank
     Material or Specification Name (Identity Data). Uses the current selection if there is one, otherwise what's
     visible in the active view. Elements with issues are temporarily isolated and selected, and a
     summary of the issues is shown.
