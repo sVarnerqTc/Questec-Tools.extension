@@ -9,7 +9,9 @@ Scope: the current selection if there is one; otherwise everything visible in
 the active view (honoring any temporary hide/isolate already applied).
 
 Elements with a blank value are temporarily isolated and selected, and a
-summary of the issues is shown. Elements that don't have the parameter at all
+summary of the issues is shown. Items with the "Bead and Crimp" instance
+parameter checked are skipped. Elements that don't have the Material or
+Specification Name parameter at all
 are counted in the summary but not isolated.
 """
 
@@ -45,6 +47,9 @@ CHECKS = [
     ("Specification Name", "Specification Name"),
 ]
 
+# Items with this Yes/No instance parameter checked are skipped entirely.
+SKIP_YES_NO_PARAM = "Bead and Crimp"
+
 BLANK = "blank"
 MISSING = "missing"
 
@@ -79,6 +84,20 @@ def param_state(element, param_name):
     if value is None or not value.strip():
         return BLANK
     return None
+
+
+def is_skipped(element):
+    """True if the Bead and Crimp instance parameter is checked."""
+    param = element.LookupParameter(SKIP_YES_NO_PARAM)
+    if param is None or not param.HasValue:
+        return False
+    try:
+        if param.StorageType == StorageType.Integer:
+            return param.AsInteger() == 1
+        value = (param.AsString() or param.AsValueString() or "").strip().lower()
+        return value in ("yes", "true", "1")
+    except Exception:
+        return False
 
 
 def is_visible_in_temp_mode(view, element):
@@ -127,7 +146,11 @@ def main():
     # counts[(check label, category label, state)] = n
     counts = {}
     flagged = []
+    skipped = 0
     for elem in elements:
+        if is_skipped(elem):
+            skipped += 1
+            continue
         cat_label = category_names.get(elem.Category.Id.IntegerValue, elem.Category.Name)
         is_flagged = False
         for check_label, param_name in CHECKS:
@@ -142,7 +165,10 @@ def main():
             flagged.append(elem)
 
     # ---- summary text
-    lines = ["Checked {0} duct items in the {1}.".format(len(elements), scope_label), ""]
+    lines = ["Checked {0} duct items in the {1}.".format(len(elements) - skipped, scope_label)]
+    if skipped:
+        lines.append("Skipped {0} with \"{1}\" checked.".format(skipped, SKIP_YES_NO_PARAM))
+    lines.append("")
     any_blank = False
     for check_label, _ in CHECKS:
         rows = [(cat, n) for (chk, cat, state), n in sorted(counts.items())
