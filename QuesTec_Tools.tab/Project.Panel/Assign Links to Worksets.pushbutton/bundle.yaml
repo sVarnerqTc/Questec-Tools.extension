@@ -1,0 +1,15 @@
+tooltip:
+  en_us: >-
+    Lists every Revit, CAD and point cloud link with its current workset. Check the links to move and
+    edit the new workset name if needed (default Link-<EXT>-<Filename>, e.g. Link-RVT-Architecture23).
+    Missing worksets are created. Elements owned by others are skipped.
+
+title:
+  en_us: >-
+    Assign Links
+
+    to Worksets
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019

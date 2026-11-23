@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Assign model elements to the Questec standard worksets.
 
+Links are handled by the separate "Assign Links to Worksets" button.
+
 Rules (in priority order):
-  1. Links (Revit, CAD, point cloud) -> "Link-<EXT>-<Filename>" (created if missing).
-  2. Pipe accessories whose family name starts with SSW and contains "Point":
+  1. Pipe accessories whose family name starts with SSW and contains "Point":
        family "SSW Control Point", or an SSW type named "...Control Point..."
          -> "Points - Control"
        all other SSW point families -> "Points - Layout"
-  3. Piping elements below the underground level -> "Pipe - Underground"
-  4. System containing MP- or MS- -> "Pipe - Mechanical"
+  2. Piping elements below the underground level -> "Pipe - Underground"
+  3. System containing MP- or MS- -> "Pipe - Mechanical"
      System containing PL- or PP- -> "Pipe - Plumbing"
      Hangers (pipe accessories with a BOP parameter) go to "Hangers - Mechanical"
      or "Hangers - Plumbing" instead, matched by, in order:
@@ -157,74 +158,6 @@ def sanitize_workset_name(name):
     for ch in INVALID_WORKSET_CHARS:
         name = name.replace(ch, "_")
     return name.strip()
-
-
-# ---------------------------------------------------------------- links
-
-def get_link_file_name(type_elem):
-    """Return the linked file's name with extension, e.g. 'Architecture23.rvt'."""
-    try:
-        if ExternalFileUtils.IsExternalFileReference(doc, type_elem.Id):
-            ref = ExternalFileUtils.GetExternalFileReference(doc, type_elem.Id)
-            path = ModelPathUtils.ConvertModelPathToUserVisiblePath(ref.GetAbsolutePath())
-            name = os.path.basename(path)
-            if name:
-                return name
-    except Exception:
-        pass
-
-    try:
-        return safe_str(type_elem.Name)
-    except Exception:
-        return ""
-
-
-def build_link_workset_name(file_name, fallback_ext):
-    base, ext = os.path.splitext(file_name)
-    ext = ext.lstrip(".").upper() or fallback_ext
-    base = base or file_name or "Unknown"
-    return sanitize_workset_name("Link-{0}-{1}".format(ext, base))
-
-
-def collect_link_assignments(scope_ids=None):
-    """Return list of (element, target workset name).
-    scope_ids: set of element id ints to limit to, or None for the whole project."""
-    results = []
-
-    def in_scope(inst):
-        return scope_ids is None or inst.Id.IntegerValue in scope_ids
-
-    for inst in FilteredElementCollector(doc).OfClass(RevitLinkInstance).ToElements():
-        if not in_scope(inst):
-            continue
-        link_type = doc.GetElement(inst.GetTypeId())
-        if link_type is None:
-            continue
-        ws_name = build_link_workset_name(get_link_file_name(link_type), "RVT")
-        results.append((inst, ws_name))
-        results.append((link_type, ws_name))
-
-    for inst in FilteredElementCollector(doc).OfClass(ImportInstance).ToElements():
-        if not in_scope(inst) or not inst.IsLinked:
-            continue
-        link_type = doc.GetElement(inst.GetTypeId())
-        if not isinstance(link_type, CADLinkType):
-            continue
-        ws_name = build_link_workset_name(get_link_file_name(link_type), "CAD")
-        results.append((inst, ws_name))
-        results.append((link_type, ws_name))
-
-    for inst in FilteredElementCollector(doc).OfClass(PointCloudInstance).ToElements():
-        if not in_scope(inst):
-            continue
-        cloud_type = doc.GetElement(inst.GetTypeId())
-        if cloud_type is None:
-            continue
-        ws_name = build_link_workset_name(get_link_file_name(cloud_type), "PCD")
-        results.append((inst, ws_name))
-        results.append((cloud_type, ws_name))
-
-    return results
 
 
 # ---------------------------------------------------------------- points
@@ -477,11 +410,7 @@ def main():
     hanger_sources = {}
     hangers_unmatched = 0
 
-    # 1. Links
-    for elem, ws_name in collect_link_assignments(scope_ids):
-        plan[elem.Id.IntegerValue] = (elem, ws_name)
-
-    # 2-4. Piping elements and points
+    # Piping elements and points (links: see "Assign Links to Worksets")
     if scope_ids is None:
         piping_collector = FilteredElementCollector(doc)
     else:

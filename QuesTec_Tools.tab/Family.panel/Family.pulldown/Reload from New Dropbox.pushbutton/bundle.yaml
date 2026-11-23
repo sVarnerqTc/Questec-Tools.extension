@@ -1,0 +1,16 @@
+tooltip:
+  en_us: >-
+    Reloads families from the new Dropbox. Uses the families of the selected elements, or pick from a list.
+    In each family's saved path, everything through the "Imperial" folder is replaced with
+    C:\Questec Mechanical Dropbox\Sysque Root Path\SysQueContent2020\BuildingData\Imperial, then the family
+    is reloaded from that path. Asks whether to keep or overwrite project parameter values.
+
+title:
+  en_us: >-
+    Reload from
+
+    New Dropbox
+authors:
+  - 'SVarner'
+help_url:
+min_revit_version: 2019
